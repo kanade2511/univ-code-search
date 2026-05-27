@@ -45,6 +45,8 @@ function HomeContent() {
   const [suggestLoading, setSuggestLoading] = useState(false);
   const suggestTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const searchTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const queryRef = useRef(query);
+  queryRef.current = query;
 
   const updateURL = useCallback(
     (q: string, p: number, type: string, schedule: string, faculty: string) => {
@@ -128,7 +130,7 @@ function HomeContent() {
   const handleSubmit = () => {
     clearTimeout(suggestTimer.current);
     clearTimeout(searchTimer.current);
-    doSearch(query, 1);
+    doSearch(queryRef.current, 1);
   };
 
   const handleQuickSearch = (q: string) => {
