@@ -1,0 +1,623 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>検索結果 | 大学コード検索</title>
+<style>
+:root {
+  --bg: oklch(97% 0.003 250);
+  --surface: oklch(100% 0 0);
+  --fg: oklch(18% 0.012 250);
+  --muted: oklch(52% 0.012 250);
+  --border: oklch(90% 0.006 250);
+  --accent: oklch(55% 0.12 255);
+  --accent-text: oklch(100% 0 0);
+  --hover: oklch(95% 0.008 250);
+
+  --font-display: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Hiragino Sans', 'Noto Sans JP', system-ui, sans-serif;
+  --font-body: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Hiragino Sans', 'Noto Sans JP', system-ui, sans-serif;
+  --font-mono: 'SF Mono', ui-monospace, Menlo, monospace;
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --space-xs: 6px;
+  --space-sm: 10px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 40px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  width: 100%;
+  min-height: 100dvh;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.container {
+  width: 100%;
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 0 var(--space-md);
+}
+
+/* Header */
+.results-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding-top: var(--space-lg);
+  padding-bottom: var(--space-md);
+}
+
+.back-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--fg);
+  text-decoration: none;
+  transition: background .15s;
+}
+.back-btn:hover { background: var(--hover); }
+
+.results-header h1 {
+  font-family: var(--font-display);
+  font-size: clamp(16px, 3vw, 20px);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+/* Compact search */
+.compact-search {
+  margin-bottom: var(--space-md);
+}
+.compact-search .search-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+  transition: border-color .2s, box-shadow .2s;
+}
+.compact-search .search-wrap:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.03), 0 4px 12px rgba(74,111,165,0.08);
+}
+.compact-search .search-icon {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  color: var(--muted);
+}
+.compact-search input[type="search"] {
+  flex: 1;
+  appearance: none;
+  border: 0;
+  background: transparent;
+  font-family: var(--font-body);
+  font-size: 15px;
+  color: var(--fg);
+  padding: 10px 8px 10px 0;
+  outline: none;
+}
+.compact-search input[type="search"]::placeholder { color: var(--muted); opacity: 1; }
+.compact-search .clear-btn {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  margin-right: 6px;
+  border-radius: var(--radius-sm);
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  transition: background .15s, color .15s;
+}
+.compact-search .clear-btn:hover { background: var(--hover); color: var(--fg); }
+
+/* Filter bar */
+.filter-bar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-lg);
+}
+.filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-xs);
+}
+.filter-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  min-width: 44px;
+}
+.filter-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 12px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--fg);
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: border-color .15s, background .15s, color .15s;
+  white-space: nowrap;
+  -webkit-tap-highlight-color: transparent;
+}
+.filter-pill:hover { border-color: var(--accent); }
+.filter-pill.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-text);
+}
+.filter-pill:active { transform: scale(0.97); }
+
+/* Results count */
+.results-count {
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: var(--space-sm);
+}
+
+/* Table (desktop) */
+.results-table-wrap {
+  overflow-x: auto;
+  margin-bottom: var(--space-xl);
+}
+.results-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+  .results-table thead th {
+    text-align: left;
+    padding: 12px 16px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--fg);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg);
+    white-space: nowrap;
+  }
+.results-table tbody td {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  color: var(--fg);
+  vertical-align: top;
+}
+.results-table tbody tr:last-child td { border-bottom: 0; }
+.results-table tbody tr:hover td { background: var(--hover); }
+  .results-table .col-code {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    font-size: 13px;
+    color: var(--accent);
+    font-weight: 600;
+    white-space: nowrap;
+    cursor: pointer;
+    user-select: all;
+    transition: opacity .15s;
+  }
+  .results-table .col-code:hover { opacity: .75; }
+  .results-table .col-code:active { opacity: .55; }
+  .results-table .col-univ { font-weight: 600; white-space: nowrap; }
+  .results-table .col-dept { color: var(--fg); }
+  .results-table .col-sub { color: var(--muted); }
+  .results-table .col-sched,
+  .results-table .col-type { color: var(--muted); white-space: nowrap; }
+
+/* Card list (mobile) */
+.card-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-xl);
+}
+.result-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-md);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+  transition: border-color .15s, box-shadow .15s;
+}
+.result-card:active { transform: scale(0.995); }
+.result-card .card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-xs);
+}
+.result-card .card-univ {
+  font-weight: 700;
+  font-size: 15px;
+}
+.result-card .card-code {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent);
+  background: oklch(97% 0.01 255);
+  padding: 3px 8px;
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
+}
+.result-card .card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs) var(--space-sm);
+  font-size: 13px;
+  color: var(--muted);
+}
+.result-card .card-meta span { display: inline-flex; align-items: center; gap: 4px; }
+.result-card .card-meta .meta-label { color: var(--muted); }
+.result-card .card-meta .meta-value { color: var(--fg); font-weight: 500; }
+
+/* Footer */
+.site-footer {
+  border-top: 1px solid var(--border);
+  padding: var(--space-lg) 0 var(--space-xl);
+  text-align: center;
+}
+.site-footer p {
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.7;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+/* Responsive visibility */
+@media (max-width: 640px) {
+  .results-table-wrap { display: none; }
+  .card-list { display: flex; }
+}
+@media (min-width: 641px) {
+  .results-table-wrap { display: block; }
+  .card-list { display: none; }
+}
+
+/* Scroll hint for filter row on mobile */
+.filter-row-wrap {
+  display: flex;
+  overflow-x: auto;
+  gap: var(--space-xs);
+  padding-bottom: 4px;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.filter-row-wrap::-webkit-scrollbar { display: none; }
+
+/* Toast */
+.toast {
+  position: fixed;
+  bottom: 28px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--fg);
+  color: var(--surface);
+  font-size: 13px;
+  font-weight: 500;
+  padding: 10px 20px;
+  border-radius: var(--radius-lg);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .25s, transform .25s;
+  z-index: 2000;
+}
+.toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+</style>
+</head>
+<body>
+
+<main class="container">
+  <header class="results-header">
+    <a href="top.html" class="back-btn" aria-label="戻る">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+    </a>
+    <h1>大学コード検索</h1>
+  </header>
+
+  <form class="compact-search" action="results.html" method="get" role="search">
+    <div class="search-wrap">
+      <span class="search-icon" aria-hidden="true">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+      </span>
+      <input
+        id="search"
+        type="search"
+        name="q"
+        placeholder="大学名またはコードを入力"
+        enterkeyhint="search"
+        autocomplete="off"
+        inputmode="search"
+      >
+      <button type="button" class="clear-btn" id="clearBtn" aria-label="クリア">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+      </button>
+    </div>
+  </form>
+
+  <section class="filter-bar" aria-label="検索フィルター">
+    <div class="filter-row">
+      <span class="filter-label">種別</span>
+      <div class="filter-row-wrap">
+        <button type="button" class="filter-pill active" data-group="type" data-value="all">すべて</button>
+        <button type="button" class="filter-pill" data-group="type" data-value="national">国立</button>
+        <button type="button" class="filter-pill" data-group="type" data-value="public">公立</button>
+        <button type="button" class="filter-pill" data-group="type" data-value="private">私立</button>
+      </div>
+    </div>
+    <div class="filter-row">
+      <span class="filter-label">系統</span>
+      <div class="filter-row-wrap">
+        <button type="button" class="filter-pill active" data-group="field" data-value="all">すべて</button>
+        <button type="button" class="filter-pill" data-group="field" data-value="liberal">文系</button>
+        <button type="button" class="filter-pill" data-group="field" data-value="science">理系</button>
+        <button type="button" class="filter-pill" data-group="field" data-value="medical">医療系</button>
+        <button type="button" class="filter-pill" data-group="field" data-value="art">芸術系</button>
+        <button type="button" class="filter-pill" data-group="field" data-value="sports">体育系</button>
+      </div>
+    </div>
+    <div class="filter-row">
+      <span class="filter-label">日程</span>
+      <div class="filter-row-wrap">
+        <button type="button" class="filter-pill active" data-group="schedule" data-value="all">すべて</button>
+        <button type="button" class="filter-pill" data-group="schedule" data-value="early">前期</button>
+        <button type="button" class="filter-pill" data-group="schedule" data-value="late">後期</button>
+        <button type="button" class="filter-pill" data-group="schedule" data-value="mid">中期</button>
+        <button type="button" class="filter-pill" data-group="schedule" data-value="common">共通</button>
+      </div>
+    </div>
+  </section>
+
+  <p class="results-count" id="resultsCount">検索結果：<strong>6</strong> 件</p>
+
+  <!-- Desktop table -->
+  <div class="results-table-wrap">
+    <table class="results-table">
+      <thead>
+        <tr>
+          <th class="col-univ">大学</th>
+          <th class="col-dept">学部</th>
+          <th class="col-sub">学科</th>
+          <th class="col-sched">日程</th>
+          <th class="col-type">方式</th>
+          <th class="col-code-head">コード</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="col-univ">東京大学</td>
+          <td class="col-dept">文科一類</td>
+          <td class="col-sub">—</td>
+          <td class="col-sched">前</td>
+          <td class="col-type">—</td>
+          <td class="col-code">1140-91-0010</td>
+        </tr>
+        <tr>
+          <td class="col-univ">東京大学</td>
+          <td class="col-dept">文科二類</td>
+          <td class="col-sub">—</td>
+          <td class="col-sched">前</td>
+          <td class="col-type">—</td>
+          <td class="col-code">1140-92-0010</td>
+        </tr>
+        <tr>
+          <td class="col-univ">東京大学</td>
+          <td class="col-dept">文科三類</td>
+          <td class="col-sub">—</td>
+          <td class="col-sched">前</td>
+          <td class="col-type">—</td>
+          <td class="col-code">1140-93-0010</td>
+        </tr>
+        <tr>
+          <td class="col-univ">東京大学</td>
+          <td class="col-dept">理科一類</td>
+          <td class="col-sub">—</td>
+          <td class="col-sched">前</td>
+          <td class="col-type">—</td>
+          <td class="col-code">1140-94-0010</td>
+        </tr>
+        <tr>
+          <td class="col-univ">東京大学</td>
+          <td class="col-dept">理科二類</td>
+          <td class="col-sub">—</td>
+          <td class="col-sched">前</td>
+          <td class="col-type">—</td>
+          <td class="col-code">1140-95-0010</td>
+        </tr>
+        <tr>
+          <td class="col-univ">東京大学</td>
+          <td class="col-dept">理科三類</td>
+          <td class="col-sub">—</td>
+          <td class="col-sched">前</td>
+          <td class="col-type">—</td>
+          <td class="col-code">1140-96-0010</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Mobile cards -->
+  <div class="card-list" role="list">
+    <article class="result-card" role="listitem">
+      <div class="card-header">
+        <span class="card-univ">東京大学</span>
+        <span class="card-code">1140-91-0010</span>
+      </div>
+      <div class="card-meta">
+        <span><span class="meta-label">学部</span> <span class="meta-value">文科一類</span></span>
+        <span><span class="meta-label">日程</span> <span class="meta-value">前</span></span>
+      </div>
+    </article>
+    <article class="result-card" role="listitem">
+      <div class="card-header">
+        <span class="card-univ">東京大学</span>
+        <span class="card-code">1140-92-0010</span>
+      </div>
+      <div class="card-meta">
+        <span><span class="meta-label">学部</span> <span class="meta-value">文科二類</span></span>
+        <span><span class="meta-label">日程</span> <span class="meta-value">前</span></span>
+      </div>
+    </article>
+    <article class="result-card" role="listitem">
+      <div class="card-header">
+        <span class="card-univ">東京大学</span>
+        <span class="card-code">1140-93-0010</span>
+      </div>
+      <div class="card-meta">
+        <span><span class="meta-label">学部</span> <span class="meta-value">文科三類</span></span>
+        <span><span class="meta-label">日程</span> <span class="meta-value">前</span></span>
+      </div>
+    </article>
+    <article class="result-card" role="listitem">
+      <div class="card-header">
+        <span class="card-univ">東京大学</span>
+        <span class="card-code">1140-94-0010</span>
+      </div>
+      <div class="card-meta">
+        <span><span class="meta-label">学部</span> <span class="meta-value">理科一類</span></span>
+        <span><span class="meta-label">日程</span> <span class="meta-value">前</span></span>
+      </div>
+    </article>
+    <article class="result-card" role="listitem">
+      <div class="card-header">
+        <span class="card-univ">東京大学</span>
+        <span class="card-code">1140-95-0010</span>
+      </div>
+      <div class="card-meta">
+        <span><span class="meta-label">学部</span> <span class="meta-value">理科二類</span></span>
+        <span><span class="meta-label">日程</span> <span class="meta-value">前</span></span>
+      </div>
+    </article>
+    <article class="result-card" role="listitem">
+      <div class="card-header">
+        <span class="card-univ">東京大学</span>
+        <span class="card-code">1140-96-0010</span>
+      </div>
+      <div class="card-meta">
+        <span><span class="meta-label">学部</span> <span class="meta-value">理科三類</span></span>
+        <span><span class="meta-label">日程</span> <span class="meta-value">前</span></span>
+      </div>
+    </article>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="container">
+    <p>出典：ベネッセ 大学コード表 &nbsp;|&nbsp; 結果は参考値です。出願の際は必ず一次資料を確認してください。</p>
+  </div>
+</footer>
+
+<div class="toast" id="toast" role="status" aria-live="polite">コードをコピーしました</div>
+
+<script>
+(function() {
+  // Read query from URL
+  var params = new URLSearchParams(location.search);
+  var q = params.get('q') || '';
+  var input = document.getElementById('search');
+  if (input) input.value = q;
+
+  // Clear button
+  var clearBtn = document.getElementById('clearBtn');
+  if (clearBtn) {
+    clearBtn.addEventListener('click', function() {
+      if (input) { input.value = ''; input.focus(); }
+    });
+  }
+
+  // Filter pills
+  var groups = {};
+  document.querySelectorAll('.filter-pill').forEach(function(btn) {
+    var g = btn.dataset.group;
+    if (!groups[g]) groups[g] = [];
+    groups[g].push(btn);
+    btn.addEventListener('click', function() {
+      groups[g].forEach(function(b) { b.classList.remove('active'); });
+      btn.classList.add('active');
+    });
+  });
+
+  // Copy code
+  var toast = document.getElementById('toast');
+  var toastTimer;
+  function showToast(msg) {
+    if (!toast) return;
+    toast.textContent = msg || 'コードをコピーしました';
+    toast.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function() { toast.classList.remove('show'); }, 1800);
+  }
+  document.querySelectorAll('.col-code, .card-code').forEach(function(el) {
+    el.addEventListener('click', function() {
+      var text = el.textContent.trim();
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(function() { showToast(); });
+      } else {
+        var ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        try { document.execCommand('copy'); showToast(); } catch(_) {}
+        document.body.removeChild(ta);
+      }
+    });
+  });
+})();
+</script>
+</body>
+</html>
