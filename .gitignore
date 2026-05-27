@@ -45,8 +45,8 @@ next-env.d.ts
 .env*.local
 
 # data files
-codelist.csv
-codelist.xlsx
+/codelist.csv
+/codelist.xlsx
 auth
 auth-wal
 

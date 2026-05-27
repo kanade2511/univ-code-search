@@ -72,7 +72,7 @@ export function SuggestionDropdown({
           onFocus={() => { if (query && (suggestions.length > 0 || loading)) setOpen(true); }}
           onBlur={() => setTimeout(() => { if (!submitted.current) setOpen(false); }, 200)}
           placeholder="大学名またはコードを入力"
-          className="w-full rounded-lg border border-gray-300 bg-white pl-10 pr-10 py-3 text-sm text-gray-900 placeholder-gray-400 focus:border-[#4a6fa5] focus:ring-3 focus:ring-[#4a6fa5]/20 transition-all outline-none shadow-sm"
+          className="w-full rounded-lg border border-gray-300 bg-white pl-10 pr-10 py-3 text-base text-gray-900 placeholder-gray-400 focus:border-[#4a6fa5] focus:ring-3 focus:ring-[#4a6fa5]/20 transition-all outline-none shadow-sm"
           autoComplete="off"
         />
         {query ? (

@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { normalizeSearchQuery } from "@/lib/university";
-import type { DbRow } from "@/lib/types";
+import type { DbRow, SearchResponse } from "@/lib/types";
+import { SimpleCache } from "@/lib/cache";
+
+const searchCache = new SimpleCache<SearchResponse>(24 * 60 * 60 * 1000);
 
 const UNIV_TYPE_SQL = `CASE
   WHEN CAST(SUBSTR(code, 1, 1) AS INTEGER) = 1 THEN '国立'
@@ -62,6 +65,10 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ results: [], total: 0, exactCount: 0, codeCount: 0, page, limit });
   }
 
+  const cacheKey = `${q}|${type}|${schedule}|${facultyType}|${page}`;
+  const cached = searchCache.get(cacheKey);
+  if (cached) return NextResponse.json(cached);
+
   try {
     const pattern = `%${q}%`;
     const prefixPattern = `${q}%`;
@@ -89,7 +96,7 @@ export async function GET(request: NextRequest) {
             ${filterClause}`,
       args: [...baseArgs, ...filterArgs],
     });
-    const total = Number((countRows[0] as any).cnt);
+    const total = Number((countRows[0] as Record<string, unknown>).cnt ?? 0);
 
     const { rows } = await db.execute({
       sql: `SELECT *, ${UNIV_TYPE_SQL} as univ_type,
@@ -120,18 +127,23 @@ export async function GET(request: NextRequest) {
       rank: r.rank,
     }));
 
-    return NextResponse.json({
+    const json = {
       results,
       total,
       exactCount: results.filter((r) => r.matchType === "exact").length,
       codeCount: results.filter((r) => r.matchType === "code").length,
       page,
       limit,
+    };
+    searchCache.set(cacheKey, json);
+    return NextResponse.json(json, {
+      headers: { "Cache-Control": "public, s-maxage=86400, stale-while-revalidate=172800" },
     });
   } catch (error) {
-    console.error("Search error:", error);
+    const message = error instanceof Error ? error.message : "不明なエラー";
+    console.error("Search error:", message);
     return NextResponse.json(
-      { error: "検索に失敗しました" },
+      { error: `検索に失敗しました: ${message}` },
       { status: 500 }
     );
   }
