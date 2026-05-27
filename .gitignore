@@ -39,3 +39,17 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# environment
+.env.local
+.env*.local
+
+# data files
+codelist.csv
+codelist.xlsx
+auth
+auth-wal
+
+# temp
+/tmp/turso_import.sql
+/tmp/turso_token.txt
