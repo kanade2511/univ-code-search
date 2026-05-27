@@ -29,22 +29,28 @@ export function useSearch() {
   const searchTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const queryRef = useRef(query);
   queryRef.current = query;
+  const searchSeq = useRef(0);
+  const suggestSeq = useRef(0);
 
   const updateURL = useCallback(
     (q: string, p: number, type: string, schedule: string, faculty: string) => {
-      const params = new URLSearchParams();
-      params.set("q", q);
-      if (p > 1) params.set("page", String(p));
-      if (type) params.set("type", type);
-      if (schedule) params.set("schedule", schedule);
-      if (faculty) params.set("faculty", faculty);
-      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+      const search = [
+        `q=${q}`,
+        p > 1 && `page=${p}`,
+        type && `type=${type}`,
+        schedule && `schedule=${schedule}`,
+        faculty && `faculty=${faculty}`,
+      ]
+        .filter(Boolean)
+        .join("&");
+      router.replace(`${pathname}?${search}`, { scroll: false });
     },
     [router, pathname]
   );
 
   const doSearch = useCallback(
     async (q: string, p: number, type?: string, schedule?: string, faculty?: string) => {
+      const seq = ++searchSeq.current;
       const ft = type ?? filterState.type;
       const fs = schedule ?? filterState.schedule;
       const ff = faculty ?? filterState.faculty;
@@ -61,19 +67,22 @@ export function useSearch() {
         if (fs) url += `&schedule=${encodeURIComponent(fs)}`;
         if (ff) url += `&faculty=${encodeURIComponent(ff)}`;
         const res = await fetch(url);
+        if (seq !== searchSeq.current) return; // stale response
         if (!res.ok) {
           const body = await res.json().catch(() => ({}));
           throw new Error(body.error || `サーバーエラー (${res.status})`);
         }
         const data = await res.json();
+        if (seq !== searchSeq.current) return; // stale response
         setResults(data.results);
         setTotal(data.total);
         updateURL(q, p, ft, fs, ff);
       } catch (e) {
+        if (seq !== searchSeq.current) return; // stale error
         setError(e instanceof Error ? e.message : "検索に失敗しました");
         setResults([]);
       } finally {
-        setLoading(false);
+        if (seq === searchSeq.current) setLoading(false);
       }
     },
     [filterState.type, filterState.schedule, filterState.faculty, updateURL]
@@ -90,6 +99,7 @@ export function useSearch() {
   }, []);
 
   const fetchSuggestions = useCallback(async (q: string) => {
+    const seq = ++suggestSeq.current;
     if (!q.trim()) {
       setSuggestions([]);
       return;
@@ -97,13 +107,15 @@ export function useSearch() {
     setSuggestLoading(true);
     try {
       const res = await fetch(`/api/universities?q=${encodeURIComponent(q)}`);
+      if (seq !== suggestSeq.current) return; // stale response
       if (!res.ok) throw new Error();
       const data = await res.json();
+      if (seq !== suggestSeq.current) return; // stale response
       setSuggestions(data.universities);
     } catch {
-      setSuggestions([]);
+      if (seq === suggestSeq.current) setSuggestions([]);
     } finally {
-      setSuggestLoading(false);
+      if (seq === suggestSeq.current) setSuggestLoading(false);
     }
   }, []);
 

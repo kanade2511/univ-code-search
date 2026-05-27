@@ -1,27 +1,36 @@
 @import "tailwindcss";
 
 @theme inline {
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-geist-sans), -apple-system, BlinkMacSystemFont, "SF Pro Display", "Hiragino Sans", "Noto Sans JP", system-ui, sans-serif;
   --font-mono: var(--font-geist-mono);
+
+  --color-background: oklch(97% 0.003 250);
+  --color-surface: oklch(100% 0 0);
+  --color-foreground: oklch(18% 0.012 250);
+  --color-muted: oklch(52% 0.012 250);
+  --color-muted-foreground: oklch(52% 0.012 250);
+  --color-border: oklch(90% 0.006 250);
   --color-accent: #4a6fa5;
-  --color-background: #f9fafb;
-  --color-foreground: #111827;
-  --color-muted: #f3f4f6;
-  --color-muted-foreground: #6b7280;
-  --color-popover: #ffffff;
-  --color-popover-foreground: #111827;
-  --color-border: #e5e7eb;
-  --color-input: #ffffff;
+  --color-accent-foreground: oklch(100% 0 0);
+  --color-hover: oklch(95% 0.008 250);
+  --color-popover: oklch(100% 0 0);
+  --color-popover-foreground: oklch(18% 0.012 250);
+  --color-input: oklch(100% 0 0);
   --color-ring: #4a6fa5;
   --color-primary: #4a6fa5;
-  --color-primary-foreground: #ffffff;
-  --color-secondary: #f3f4f6;
-  --color-secondary-foreground: #111827;
+  --color-primary-foreground: oklch(100% 0 0);
+  --color-secondary: oklch(95% 0.008 250);
+  --color-secondary-foreground: oklch(18% 0.012 250);
   --color-destructive: #ef4444;
   --color-destructive-foreground: #ffffff;
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
 }
 
 body {
   background: var(--color-background);
   color: var(--color-foreground);
+  font-family: var(--font-sans);
 }

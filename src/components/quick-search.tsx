@@ -31,31 +31,44 @@ type Props = {
 };
 
 export function QuickSearch({ onSelect }: Props) {
-  const btn =
-    "px-2.5 py-1 text-xs rounded-md bg-white border border-gray-300 text-gray-500 hover:text-[#4a6fa5] hover:border-[#4a6fa5] transition-colors cursor-pointer";
+  const tagBtn =
+    "inline-flex items-center px-3 py-[7px] text-[13px] font-medium border border-border rounded-[10px] bg-popover text-foreground cursor-pointer transition-colors duration-150 hover:border-accent hover:bg-accent/5 active:scale-[0.97] select-none max-[480px]:px-2.5 max-[480px]:py-[6px] max-[480px]:text-xs";
 
   return (
-    <div className="mb-6 space-y-3">
-      <div>
-        <div className="text-xs font-medium text-gray-400 mb-1.5">国公立</div>
-        <div className="flex flex-wrap gap-1.5">
+    <div className="mb-10 space-y-6">
+      <section aria-labelledby="national-heading">
+        <h2
+          id="national-heading"
+          className="flex items-center gap-1.5 text-xs font-semibold tracking-[0.04em] uppercase text-muted-foreground mb-2.5"
+        >
+          <span className="w-1.5 h-1.5 rounded-full bg-accent" aria-hidden="true" />
+          国公立
+        </h2>
+        <div className="flex flex-wrap gap-1.5 max-[480px]:gap-[7px]">
           {NATIONAL.map((u) => (
-            <button key={u.label} onClick={() => onSelect(u.query)} className={btn}>
+            <button key={u.label} onClick={() => onSelect(u.query)} className={tagBtn}>
               {u.label}
             </button>
           ))}
         </div>
-      </div>
-      <div>
-        <div className="text-xs font-medium text-gray-400 mb-1.5">私立</div>
-        <div className="flex flex-wrap gap-1.5">
+      </section>
+
+      <section aria-labelledby="private-heading">
+        <h2
+          id="private-heading"
+          className="flex items-center gap-1.5 text-xs font-semibold tracking-[0.04em] uppercase text-muted-foreground mb-2.5"
+        >
+          <span className="w-1.5 h-1.5 rounded-full bg-accent" aria-hidden="true" />
+          私立
+        </h2>
+        <div className="flex flex-wrap gap-1.5 max-[480px]:gap-[7px]">
           {PRIVATE.map((u) => (
-            <button key={u.label} onClick={() => onSelect(u.query)} className={btn}>
+            <button key={u.label} onClick={() => onSelect(u.query)} className={tagBtn}>
               {u.label}
             </button>
           ))}
         </div>
-      </div>
+      </section>
     </div>
   );
 }

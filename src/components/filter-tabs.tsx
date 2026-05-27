@@ -50,15 +50,15 @@ function TabRow({
   onSelect: (value: string) => void;
 }) {
   return (
-    <div className="flex items-center gap-1 text-xs flex-wrap">
+    <div className="flex items-center gap-1.5 flex-wrap">
       {tabs.map((t) => (
         <button
           key={t.value}
           onClick={() => onSelect(t.value)}
-          className={`px-3 py-1.5 rounded-md transition-colors cursor-pointer whitespace-nowrap ${
+          className={`px-3 py-1.5 rounded-lg border cursor-pointer whitespace-nowrap text-xs font-medium transition-all duration-150 active:scale-95 ${
             current === t.value
-              ? "bg-[#4a6fa5] text-white"
-              : "bg-white border border-gray-300 text-gray-500 hover:text-[#4a6fa5] hover:border-[#4a6fa5]"
+              ? "bg-accent text-white border-accent"
+              : "bg-popover border-border text-muted-foreground hover:border-accent hover:text-accent"
           }`}
         >
           {t.label}
@@ -70,25 +70,25 @@ function TabRow({
 
 export function FilterTabs({ state, onChange }: Props) {
   return (
-    <div className="mb-4 space-y-2">
-      <div className="flex items-center gap-2">
-        <span className="text-xs text-gray-400 w-8 shrink-0">区分</span>
+    <div className="space-y-2.5">
+      <div className="flex items-center gap-3">
+        <span className="text-xs text-muted-foreground font-medium w-10 shrink-0">区分</span>
         <TabRow
           tabs={TYPE_TABS}
           current={state.type}
           onSelect={(v) => onChange({ type: "type", value: v })}
         />
       </div>
-      <div className="flex items-center gap-2">
-        <span className="text-xs text-gray-400 w-8 shrink-0">学部</span>
+      <div className="flex items-center gap-3">
+        <span className="text-xs text-muted-foreground font-medium w-10 shrink-0">学部</span>
         <TabRow
           tabs={FACULTY_TABS}
           current={state.faculty}
           onSelect={(v) => onChange({ type: "faculty", value: v })}
         />
       </div>
-      <div className="flex items-center gap-2">
-        <span className="text-xs text-gray-400 w-8 shrink-0">日程</span>
+      <div className="flex items-center gap-3">
+        <span className="text-xs text-muted-foreground font-medium w-10 shrink-0">日程</span>
         <TabRow
           tabs={SCHEDULE_TABS}
           current={state.schedule}
