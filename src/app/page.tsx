@@ -6,7 +6,6 @@ import { SuggestionDropdown } from "@/components/suggestion-dropdown";
 import { QuickSearch } from "@/components/quick-search";
 import { FilterTabs, type FilterAction, type FilterState } from "@/components/filter-tabs";
 import { ResultList } from "@/components/result-list";
-import { ErrorBoundary } from "@/components/error-boundary";
 import type { SearchResult } from "@/lib/types";
 
 export default function Home() {
@@ -18,9 +17,7 @@ export default function Home() {
         </div>
       }
     >
-        <ErrorBoundary>
-          <HomeContent />
-        </ErrorBoundary>
+        <HomeContent />
     </Suspense>
   );
 }
