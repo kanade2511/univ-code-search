@@ -35,7 +35,9 @@ function matchRankSQL(): string {
     WHEN university = ? THEN 0 WHEN university = ? THEN 0
     WHEN university = ? || '大学' THEN 0 WHEN university = ? || '大学校' THEN 0
     WHEN code = ? THEN 1
+    WHEN REPLACE(code, '-', '') = ? THEN 1
     WHEN code || '-' LIKE ? THEN 2
+    WHEN REPLACE(code, '-', '') LIKE ? THEN 2
     WHEN university LIKE ? THEN 3
     ELSE 4
   END`;
@@ -46,10 +48,14 @@ function matchTypeSQL(): string {
     WHEN university = ? THEN 'exact' WHEN university = ? THEN 'exact'
     WHEN university = ? || '大学' THEN 'exact' WHEN university = ? || '大学校' THEN 'exact'
     WHEN code = ? THEN 'code'
+    WHEN REPLACE(code, '-', '') = ? THEN 'code'
     WHEN code || '-' LIKE ? THEN 'prefix'
+    WHEN REPLACE(code, '-', '') LIKE ? THEN 'prefix'
     ELSE 'partial'
   END`;
 }
+
+const CODE_HYPHEN_PATTERN = /-/g;
 
 export async function GET(request: NextRequest) {
   const raw = request.nextUrl.searchParams.get("q")?.trim() ?? "";
@@ -70,9 +76,13 @@ export async function GET(request: NextRequest) {
   if (cached) return NextResponse.json(cached);
 
   try {
+    // Strip hyphens for code-only matching (support both "1005-55-0110" and "1005550110")
+    const codeQuery = raw.replace(CODE_HYPHEN_PATTERN, "");
     const pattern = `%${q}%`;
     const prefixPattern = `${q}%`;
-    const baseArgs = [pattern, pattern, pattern, pattern];
+    const codePattern = `%${codeQuery}%`;
+    const codePrefixPattern = `${codeQuery}%`;
+    const baseArgs = [pattern, pattern, pattern, pattern, codePattern];
 
     // Build filter clauses
     const parts: string[] = [];
@@ -92,7 +102,7 @@ export async function GET(request: NextRequest) {
 
     const { rows: countRows } = await db.execute({
       sql: `SELECT COUNT(*) as cnt FROM university_codes
-            WHERE (university LIKE ? OR code LIKE ? OR faculty LIKE ? OR department LIKE ?)
+            WHERE (university LIKE ? OR code LIKE ? OR faculty LIKE ? OR department LIKE ? OR REPLACE(code, '-', '') LIKE ?)
             ${filterClause}`,
       args: [...baseArgs, ...filterArgs],
     });
@@ -102,13 +112,13 @@ export async function GET(request: NextRequest) {
       sql: `SELECT *, ${UNIV_TYPE_SQL} as univ_type,
             ${matchRankSQL()} as match_rank, ${matchTypeSQL()} as match_type
             FROM university_codes
-            WHERE (university LIKE ? OR code LIKE ? OR faculty LIKE ? OR department LIKE ?)
+            WHERE (university LIKE ? OR code LIKE ? OR faculty LIKE ? OR department LIKE ? OR REPLACE(code, '-', '') LIKE ?)
             ${filterClause}
             ORDER BY match_rank, rank, university, faculty, department
             LIMIT ? OFFSET ?`,
       args: [
-        raw, q, q, q, q, prefixPattern, pattern,
-        raw, q, q, q, q, prefixPattern,
+        raw, q, q, q, q, prefixPattern, pattern, codeQuery, codePrefixPattern,
+        raw, q, q, q, q, prefixPattern, codeQuery, codePrefixPattern,
         ...baseArgs, ...filterArgs,
         limit, offset,
       ],

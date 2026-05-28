@@ -85,7 +85,7 @@ export function SuggestionDropdown({
           onFocus={() => { if (query && (suggestions.length > 0 || loading)) setOpen(true); }}
           onBlur={() => setTimeout(() => { if (!submitted.current) setOpen(false); }, 200)}
           placeholder="大学名またはコードを入力"
-          className="flex-1 border-0 bg-transparent text-base min-[16px] md:text-lg text-foreground placeholder:text-muted-foreground/60 outline-none py-3 pr-2"
+          className="flex-1 border-0 bg-transparent text-[16px] md:text-lg text-foreground placeholder:text-muted-foreground/60 outline-none py-3 pr-2"
           autoComplete="off"
           enterKeyHint="search"
           inputMode="search"
