@@ -1,309 +1,177 @@
-# 進研模試 大学学部学科コード（10桁）検索サイト 仕様書
+# 進研模試 大学コード検索 — 実装仕様書
 
-## 1. コード体系の概要
+## 1. 概要
 
-ベネッセの「進研模試／ベネッセ総合学力テスト」で使用される大学コードには **4桁・8桁・10桁** の3種類がある。
+ベネッセ「進研模試／ベネッセ総合学力テスト」で使用される大学学部学科コード（10桁）を検索するためのWebアプリケーション。
 
-| コード種別 | 構成 | 用途 |
-|-----------|------|------|
-| **4桁コード** | 大学コードのみ | 大学の識別 |
-| **8桁コード** | 大学4桁 + 学部2桁 + 学科2桁 | 調査書・推薦書の発行明細表 |
-| **10桁コード** | 大学4桁 + 学部2桁 + 学科2桁 + 日程1桁 + 方式1桁 | マークシート記入用 |
-
-### 10桁コードの構造（公式定義）
-
-> **`大学(4桁) + 学部(2桁) + 学科(2桁) + 日程(1桁) + 方式(1桁)`**
-
-出典: ベネッセ お問い合わせサイト  
-https://benesse-tob.my.site.com/Toiawase/s/article/65015
-
-```
-例: 1140 91 00 10
-     └┬─┘└┬┘└┬┘└┬┘└┬┘
-      大学 学部 学科 日程 方式
-      (4)  (2)  (2)  (1)  (1)
-```
-
-### 8桁コードとの関係
-
-- 8桁コード = **大学4桁 + 学部2桁 + 学科2桁**
-- 10桁コード = **8桁コード + 日程1桁 + 方式1桁**
-- **模試の2年7月～1月回**（高3生対象の8月以降の模試など）については、日程・方式の情報がないため **8桁コード** が使われる場合がある。
+- 大学名・コード番号・学部名・学科名から検索可能
+- モバイルファースト、シングルページアプリケーション
+- Vercel デプロイ前提
 
 ---
 
-## 2. 各構成要素の詳細
+## 2. 技術スタック
 
-### 2.1 大学コード（4桁）
+| 要素 | 採用技術 |
+|------|---------|
+| フレームワーク | Next.js 16 (App Router) |
+| 言語 | TypeScript (strict) |
+| CSS | Tailwind v4 + `@theme inline`（CSS変数） |
+| データベース | Turso (libsql / SQLite互換) |
+| アイコン | lucide-react |
+| フォント | Geist (Vercel提供、variable font) |
+| バンドル | Turbopack（dev）/ Next.js ビルド |
+| デプロイ | Vercel |
+| 解析 | @vercel/analytics |
 
-各大学・短大に割り当てられた4桁の識別番号。
-
-| 大学コード | 大学名 |
-|-----------|--------|
-| 1005 | 旭川医科大学 |
-| 1025 | 北海道大学 |
-| 1140 | 東京大学 |
-| 3325 | 早稲田大学 |
-| ... | ... |
-
-- 国公立大学は **10xx** 台が多い
-- 私立大学は **2xxx〜3xxx** 台
-- 短大は **4xxx〜5xxx** 台
-- 専門学校は **8xxx** 台
-
-### 2.2 学部コード（2桁）
-
-各大学の学部に割り当てられた2桁のコード。
-
-| 学部コード | 学部名（例：北海道大学） |
-|-----------|------------------------|
-| 01 | 文学部 |
-| 02 | 教育学部 |
-| 13 | 法学部 |
-| 16 | 経済学部 |
-| 39 | 理学部 |
-| 40 | 工学部 |
-| 54 | 農学部 |
-| 67 | 医学部 |
-
-- 学部コードは大学ごとに独自に割り振られている（全国共通ではない）
-- 2桁の数字で表現（00〜99）
-
-### 2.3 学科コード（2桁）
-
-各学部内の学科・課程に割り当てられた2桁のコード。
-
-| 学科コード | 意味 |
-|-----------|------|
-| 00 | 学科なし / 学科区分なし |
-| 01 | （その学部の1つ目の学科） |
-| 02 | （2つ目の学科） |
-
-- **学科がない学部**（募集単位が学部単位）の場合は **00**
-- 学科の細かい専攻・コースまで区別される場合もある
-
-### 2.4 日程コード（1桁）
-
-入試の日程（選抜区分）を表す1桁のコード。
-
-| 日程コード | 意味（例） |
-|-----------|-----------|
-| 0 | 一般選抜 |
-| 1 | 前期日程 |
-| 2 | 後期日程 |
-| 7 | 共通テスト利用方式 |
-| その他 | 大学・方式により異なる |
-
-- 実際の値は大学・入試方式によって異なる
-- 現行のコード表では主に 0〜9 の数字が使われる
-
-### 2.5 方式コード（1桁）
-
-入試方式（試験科目型・配点区分など）を表す1桁のコード。
-
-| 方式コード | 意味（例） |
-|-----------|-----------|
-| 0 | 標準方式 / A方式 |
-| 1 | B方式 / 一般方式 |
-| 2 | 英語重視型 |
-| 3 | 数学型 |
-| ... | ... |
-
-- 日程コードと同様、大学ごとに意味が異なる
+**削除された依存関係**: shadcn/ui 関連（@base-ui/react, class-variance-authority, cmdk, shadcn CLI）、clsx/tailwind-merge（未使用の cn() 関数専用）、tw-animate-css（未使用）。
 
 ---
 
-## 3. データ構造
+## 3. データベース設計
 
-### 3.1 8桁コード（ベースデータ）
-
-PDFのコード表から抽出した基本データは以下のカラムで構成される：
-
-| カラム | 説明 | 例 |
-|-------|------|-----|
-| 大学コード | 8桁（= 大学4桁 + 学部2桁 + 学科2桁） | 10250101 |
-| 学校名 | 大学名 | 北海道大学 |
-| 学部名 | 学部名 | 文学部 |
-| 学科名 | 学科名（空の場合は 全角スペース） | 人文科学科 |
-| 専攻 | 専攻・コース名（空の場合あり） | |
-
-### 3.2 10桁コード（検索・表示用）
-
-表示フォーマットの例：
-
-```
-1140-91-0010
-└┬─┘└┬┘└──┬──┘
- 大学 学部 学科+日程+方式
-(4桁) (2桁)   (4桁)
-```
-
-ダッシュ（`-`）で **4桁-2桁-4桁** の3グループに区切って表示される。
-- 1グループ目: 大学コード（4桁）
-- 2グループ目: 学部コード（2桁）
-- 3グループ目: 学科コード（2桁）+ 日程コード（1桁）+ 方式コード（1桁）
-
-例: `1140-91-0010` → 大学=1140, 学部=91, 学科=00, 日程=1, 方式=0
-
-### 3.3 既存サイトのデータ構造（参考）
-
-既存の検索サイト（[2026年度入試大学コード検索サイト](https://tkhub.cybranceehost.com/univcode/home.html)）のデータ例：
-
-| 入学方式 | 10桁コード |
-|---------|-----------|
-| 東大 文一 <前> | 1140-91-0010 |
-| 東大 理一 <前> | 1140-94-0010 |
-| 早大 法 | 3325-12-0001 |
-| 早大 法 <共> | 3325-12-0072 |
-| 早大 教育 英語英文 A | 3325-30-0100 |
-| 早大 教育 英語英文 <共> C | 3325-30-0171 |
-
----
-
-## 4. データソース
-
-### 4.1 公式ソース
-
-- **大学コード表（PDF）**: 各高校に配布されるベネッセの大学コード一覧
-  - 例: [2023年度 大学コード表](https://www.yokohama-js.chuo-u.ac.jp/contents/wp-content/uploads/college_code_NorP.pdf) (89ページ)
-  - 例: [2026年度用 大学コード](https://www.seto-seirei-js.ed.jp/uploads/university_codes.pdf) (101ページ, 8桁コード + 学校名/学部名/学科名/専攻)
-- **進研模試デジタルサービスFAQ**: https://benesse-tob.my.site.com/Toiawase/s/article/65015
-
-### 4.2 コード体系の解釈に関する注意
-
-- ベネッセ公式が公開しているのは **「大学コード表」のPDFのみ**で、体系的に公開されたデータベースやAPIは存在しない
-- 4桁コードのみの一覧や、日程・方式コードの意味対応表は一般公開されていない
-- 日程コード・方式コードの具体的な値の意味は**大学ごとに異なる**ため、コード表をそのまま参照する必要がある
-- コードは毎年見直され、新設大学・学部・学科の追加や、廃止に伴う削除が行われる
-
----
-
-## 5. 実装アーキテクチャ
-
-### 5.1 技術スタック
-
-| 要素 | 採用技術 | 理由 |
-|------|---------|------|
-| フレームワーク | Next.js 16 (App Router) | SSG/SSR選択肢、Vercelデプロイ前提 |
-| CSS | Tailwind v4 + `@theme inline` | v4のCSSファースト設計、JITの高速性 |
-| UIコンポーネント | 自前実装（shadcn/uiは未使用に） | Popover+Commandの二重入力がスマホで使いづらいため |
-| データベース | Turso (libsql) | Supabase無料枠枯渇後、Edge対応SQLite |
-| アイコン | lucide-react | 軽量、tree-shakeable |
-| フォント | Geist (Vercel) | 統一感、variable font |
-| デプロイ | Vercel (予定) | Next.jsとの親和性 |
-
-### 5.2 データベース設計
+### 3.1 テーブル構成
 
 単一テーブル `university_codes`（23,127行、フラット構造）
 
 ```sql
 CREATE TABLE university_codes (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  university TEXT NOT NULL,      -- 大学名（省略形）
+  university TEXT NOT NULL,      -- 大学名（旧名表記を含む場合あり）
   faculty TEXT NOT NULL,          -- 学部名
   department TEXT NOT NULL,       -- 学科名
   schedule TEXT NOT NULL,         -- 日程コード（共/前/後/中/他）
   method TEXT NOT NULL,           -- 入試方式
   code TEXT NOT NULL UNIQUE,      -- 10桁コード（XXXX-XX-XXXX）
-  rank INTEGER DEFAULT 5          -- 検索順位（0=最高, 5=最低）
+  rank INTEGER DEFAULT 5,         -- 検索順位（0=最高, 5=最低）
+  aliases TEXT NOT NULL DEFAULT ''-- 旧名（APIでは不使用、DB参照用）
 );
 ```
 
-**国公立/私立の判定**: DBカラムに持たず、SQLのCASE式でコード先頭桁から動的判定
-- `1xxx` → 国立
-- `2xxx` → 公立
-- `3xxx` → 私立
+### 3.2 名称変更大学の扱い
 
-**ランク設計**:
+2025〜2026年度に名称変更した13大学について、`university` フィールドに直接旧名を併記：
 
-| rank | 対象大学 | 行数 |
-|------|---------|------|
+```
+昭和医科大学 (旧名: 昭和大学)
+YIC学院大学 (旧名: 広島女学院大学)
+和泉大学 (旧名: 大阪河崎リハビリテーション大学)
+```
+
+これにより `university LIKE` の検索対象が両方の名称をカバーする。
+
+### 3.3 国公立/私立の判定
+
+DBカラムに持たず、SQLのCASE式でコード先頭桁から動的判定：
+
+```sql
+CASE
+  WHEN CAST(SUBSTR(code, 1, 1) AS INTEGER) = 1 THEN '国立'
+  WHEN CAST(SUBSTR(code, 1, 1) AS INTEGER) = 2 THEN '公立'
+  WHEN CAST(SUBSTR(code, 1, 1) AS INTEGER) = 3 THEN '私立'
+  ELSE '国立'
+END
+```
+
+### 3.4 ランク設計
+
+| rank | 対象大学 | 行数（参考） |
+|------|---------|-------------|
 | 0 | 東京一工（東京大・京都大・一橋大・東京科学大） | 52 |
-| 1 | 旧帝大・難関国立（東北大・北海道大・名古屋大・大阪大・九州大・筑波大など） | 1,469 |
-| 2 | 早慶上理（早稲田大・慶應義塾大・上智大・東京理科大） | 339 |
-| 3 | GMARCH + 成成明学獨國武（学習院・明治・青山・立教・中央・法政） | 1,781 |
+| 1 | 旧帝大・難関国立 | 1,469 |
+| 2 | 早慶上理 | 339 |
+| 3 | GMARCH + 成成明学獨國武 | 1,781 |
 | 4 | 日東駒専 + 産近甲龍 + 他中堅 | 3,071 |
 | 5 | その他の大学 | 16,415 |
 
-### 5.3 ディレクトリ構成
+---
+
+## 4. ディレクトリ構成
 
 ```
 code-search/
-├── source/                          # 元データ（git管理）
-│   ├── codelist.csv                 # 生データ（ヘッダー行180行含む）
-│   ├── codelist.xlsx                # Excel元ファイル
-│   └── codelist_clean.csv           # クリーニング済み（23,127行）
 ├── src/
 │   ├── app/
-│   │   ├── page.tsx                 # メインページ（100行、use-searchに委譲）
+│   │   ├── page.tsx                 # メインページ（use-searchに委譲）
 │   │   ├── layout.tsx               # ルートレイアウト（Geistフォント、ライトテーマ）
-│   │   ├── globals.css              # Tailwind v4 + CSS変数（アクセントカラー #4a6fa5）
+│   │   ├── globals.css              # Tailwind v4 + CSS変数定義
 │   │   └── api/
-│   │       ├── search/route.ts      # GET /api/search?q=&page=&type=&schedule=&faculty=
-│   │       └── universities/route.ts # GET /api/universities?q=  サジェスト
+│   │       ├── search/route.ts      # GET /api/search
+│   │       └── universities/route.ts# GET /api/universities（サジェスト）
 │   ├── components/
-│   │   ├── suggestion-dropdown.tsx  # 入力 + サジェストドロップダウン
-│   │   ├── quick-search.tsx         # トップページ選択肢（国公立15 + 私立21）
-│   │   ├── filter-tabs.tsx          # フィルタータブ（区分/学部/日程 3段）
-│   │   └── result-list.tsx          # 結果表示（PCテーブル/モバイルカード + ページネーション）
+│   │   ├── suggestion-dropdown.tsx  # 検索入力 + サジェストドロップダウン
+│   │   ├── quick-search.tsx         # 初期表示 クイック検索ボタン
+│   │   ├── filter-tabs.tsx          # 3段フィルター（区分/学部/日程）
+│   │   └── result-list.tsx          # 結果表示（PCテーブル/モバイルカード）
 │   └── lib/
 │       ├── db.ts                    # Tursoクライアント（@libsql/client）
 │       ├── types.ts                 # SearchResult, SearchResponse, DbRow 型定義
-│       ├── cache.ts                 # SimpleCache<T> インメモリキャッシュ（24時間TTL）
+│       ├── cache.ts                 # SimpleCache<T> インメモリキャッシュ
 │       ├── university.ts            # normalizeSearchQuery（末尾「大学」除去）
-│       ├── use-search.ts            # カスタムフック（検索ロジック集約）
-│       └── utils.ts                 # cn() utility（clsx + tailwind-merge）
-├── SPEC.md                          # 本ファイル
-├── .gitignore
+│       └── use-search.ts            # カスタムフック（全検索ロジック集約）
+├── postcss.config.mjs               # Tailwind v4 PostCSS設定
 ├── next.config.ts
 ├── package.json
-├── postcss.config.mjs
-└── tsconfig.json
+├── tsconfig.json
+├── bun.lock
+├── next-env.d.ts
+└── .env.local                       # TURSO_DB_URL, TURSO_DB_TOKEN
 ```
 
-### 5.4 データフロー
+---
+
+## 5. データフロー
 
 ```
 ユーザー入力
     │
     ▼
-use-search (カスタムフック)
-    │  handleValueChange → 200ms debounce → fetch /api/universities
-    │  handleSubmit / 自動検索 → 400ms debounce → fetch /api/search
-    │  handleFilterChange → 即時 fetch /api/search
-    │  URL同期（useSearchParams）
+use-search（カスタムフック）
     │
-    ├─► /api/universities?q=東京
-    │       └─ SimpleCache → Turso (DISTINCT university LIKE ? ORDER BY rank)
-    │             └─ レスポンス: { universities: ["東京大学", ...] }
+    ├─ handleValueChange → 200ms debounce → fetch /api/universities
+    │                     400ms debounce → fetch /api/search
     │
-    └─► /api/search?q=東京&page=1&type=国立&schedule=前
-            └─ SimpleCache → Turso (LIKE + フィルター)
-                  └─ レスポンス: { results: [...], total, exactCount, ... }
-                        │
-                        ▼
-                  result-list.tsx
-                    ├─ 完全一致（大学名）グループ
-                    ├─ 完全一致（コード）グループ
-                    ├─ コード前方一致グループ
-                    └─ 部分一致グループ
+    ├─ handleSubmit → 即時 fetch /api/search
+    │
+    ├─ handleQuickSearch → 即時 fetch /api/search
+    │
+    ├─ handleClear → 状態リセット + URLクリア
+    │
+    └─ handleFilterChange → 即時 fetch /api/search（page=1）
+            │
+            ▼
+    APIルート → SimpleCache → Turso → レスポンス
+            │
+            ▼
+    result-list.tsx（グループ別表示）
 ```
 
-### 5.5 API
+### URL同期
 
-#### GET /api/search
+全検索パラメータをURLクエリに保持（`router.replace`、`scroll: false`）。
+ページリロード時に URL のパラメータから初期検索を実行。
+
+---
+
+## 6. API
+
+### 6.1 GET /api/search
 
 検索API。クエリに該当する大学コードを返す。
 
 **パラメータ**:
-- `q` (必須): 検索クエリ（大学名・コード番号・学部名・学科名）
-- `page` (任意, default=1): ページ番号
-- `limit` (任意, default=50, max=200): 1ページあたりの件数
-- `type` (任意): 区分フィルター（国立/公立/私立）
-- `schedule` (任意): 日程フィルター（前/後/中/共）
-- `faculty` (任意): 学部系統フィルター（文系/理系/医療系/芸術系/体育系）
+
+| パラメータ | 必須 | デフォルト | 説明 |
+|-----------|------|-----------|------|
+| `q` | 必須 | — | 検索クエリ（大学名・コード・学部名・学科名） |
+| `page` | 任意 | 1 | ページ番号 |
+| `limit` | 任意 | 50 | 1ページあたり件数（max 200） |
+| `type` | 任意 | — | 区分フィルター（国立/公立/私立） |
+| `schedule` | 任意 | — | 日程フィルター（前/後/中/共） |
+| `faculty` | 任意 | — | 学部系統フィルター（文系/理系/医療系/芸術系/体育系） |
 
 **レスポンス**:
+
 ```json
 {
   "results": [
@@ -328,205 +196,330 @@ use-search (カスタムフック)
 }
 ```
 
-**Cache-Control**: `public, s-maxage=86400, stale-while-revalidate=172800`
+**キャッシュ**: `Cache-Control: public, s-maxage=86400, stale-while-revalidate=172800`
 
-#### GET /api/universities
+### 6.2 GET /api/universities
 
 サジェストAPI。入力中の文字列に部分一致する大学名を返す。
 
 **パラメータ**:
-- `q` (必須): 部分検索クエリ
+
+| パラメータ | 必須 | 説明 |
+|-----------|------|------|
+| `q` | 必須 | 部分検索クエリ |
 
 **レスポンス**:
+
 ```json
 {
-  "universities": ["東京大学", "東京科学大学", "東京外国語大学", ...]
+  "universities": ["東京大学", "東京科学大学", "東京外国語大学"]
 }
 ```
 
-### 5.6 コンポーネント設計
+**キャッシュ**: `Cache-Control: public, s-maxage=86400, stale-while-revalidate=172800`
 
-#### page.tsx（エントリーポイント）
+---
 
-`useSearch()` フックから必要な関数と状態を受け取り、SuggestionDropdown / QuickSearch / FilterTabs / ResultList を配置。`<Suspense>` でラップして useSearchParams の要件に対応。
+## 7. コンポーネント設計
 
-#### use-search.ts（カスタムフック）
+### 7.1 page.tsx
 
-全検索ロジックを集約。page.tsx を100行にまで削減。
-- 状態: query, results, total, loading, error, page, suggestions, filterState
-- 関数: handleValueChange（debounceサジェスト+検索）, handleSubmit, handleQuickSearch, handleClear, handleFilterChange, doSearch（URL同期込み）
+`useSearch()` フックから状態・関数を受け取り、各コンポーネントを配置。`<Suspense>` でラップ（useSearchParams 要件対応）。
+
+- クエリ未入力 → QuickSearch 表示
+- クエリ入力後 → FilterTabs + ResultList 表示 + 「← 戻る」ボタン
+- ローディング中 → スピナー表示
+- エラー時 → 赤バナー表示
+- フッターに出典表記
+
+### 7.2 use-search.ts（カスタムフック）
+
+全検索ロジックを集約。
+
+| 状態/関数 | 説明 |
+|----------|------|
+| `query` | 現在の検索クエリ文字列 |
+| `results` | 検索結果配列 |
+| `total` | 総件数 |
+| `loading` | ローディング中フラグ |
+| `error` | エラーメッセージ文字列 |
+| `page` | 現在のページ番号 |
+| `totalPages` | 総ページ数（`Math.ceil(total/50)`） |
+| `suggestions` | サジェスト大学名配列 |
+| `filterState` | `{ type, schedule, faculty }` |
+| `handleValueChange(v)` | 入力変更→debounceサジェスト+検索 |
+| `handleSubmit()` | 送信（即時検索） |
+| `handleQuickSearch(q)` | クイック選択（即時検索） |
+| `handleClear()` | 全状態リセット+URLクリア |
+| `handleFilterAction(action)` | フィルター変更→即時検索（page=1） |
+| `doSearch(q, p, type?, schedule?, faculty?)` | 直接検索呼び出し |
+
+**状態管理**:
 - `queryRef` でサジェスト選択時の即時検索が古い値を読む問題を防止
-- マウント時、URLパラメータがあれば初期検索を実行
+- `searchSeq` / `suggestSeq` で stale レスポンスを破棄
+- `searchTimer` / `suggestTimer` で debounce 制御
+- マウント時は `initialized` ref で1回のみ初期検索を実行
 
-#### suggestion-dropdown.tsx
+### 7.3 suggestion-dropdown.tsx
 
-- 検索アイコン + input + クリアボタン（X）
-- サジェストドロップダウン（max-h-72, スクロール）
-- キーボード操作: Enter（選択/送信）, ArrowUp/Down（フォーカス移動）, Escape（閉じる）
-- スマホ対応: `onPointerDown` でタップ即座に選択、blur 200ms遅延でドロップダウンのクリックを弾かない
-- 入力確定時は `submitted` ref でドロップダウンの再表示を防止
+Appleスタイルのヘルパー検索バー。
 
-#### filter-tabs.tsx
+| 機能 | 実装 |
+|------|------|
+| レイアウト | Searchアイコン(48x48) + input + クリアボタン(X) + 検索ボタン(ArrowRight) |
+| 検索ボタン | sm以上のみ表示（モバイル非表示） |
+| サジェスト | ドロップダウン（max-h-72 スクロール） |
+| キーボード | Enter（選択/送信）、ArrowUp/Down（フォーカス移動）、Escape（閉じる） |
+| マウス | onPointerDown でタップ即座に選択 |
+| blur制御 | 200ms setTimeout でドロップダウン内クリックを弾かない |
+| 確定防止 | `submitted` ref で送信後のドロップダウン再表示防止 |
+| モバイル | `enterKeyHint="search"`, `inputMode="search"` |
+| iOS対策 | `text-[16px]` で自動ズーム防止 |
 
-3段のタブフィルター（区分/学部/日程）。各タブは `FilterState` と `FilterAction` で型安全に制御。
-- 「すべて」がデフォルト選択
-- 選択中は `bg-[#4a6fa5] text-white`（塗り）、未選択は白枠線
+### 7.4 quick-search.tsx
 
-#### result-list.tsx
+クエリ未入力時にのみ表示。主要大学へのクイックアクセス。
 
-結果を matchType 別にグループ表示。
-- **exact**: 完全一致（大学名が検索語と一致）
-- **code**: 完全一致（コードが検索語と一致）
-- **prefix**: コード前方一致
-- **partial**: 部分一致（大学名・学部名・学科名）
+- 国公立: 15校
+- 私立: 20校
 
-PCはテーブル、モバイルはカード表示でレスポンシブ切り替え（mdブレークポイント）。
-ページネーションは「前へ / N / M / 次へ」のシンプルな形式。
+選択時に即座に検索を実行（handleQuickSearch 経由）。
+検索後は非表示（スペース節約）。
 
-#### quick-search.tsx
+### 7.5 filter-tabs.tsx
 
-初期表示のみ表示されるクイック検索ボタン。
-- 国公立15校（東京大・京都大・東科大・一橋大・北海道大・東北大・名古屋大・大阪大・九州大・筑波大・千葉大・横浜国立大・東京外国語大・東京都立大・横浜市立大）
-- 私立21校（早稲田大・慶應義塾大・上智大・東京理科大 + GMARCH全6校 + 日東駒専 + 成城・成蹊・明治学院・獨協・國學院・武蔵）
+3段のタブフィルター。型安全（`FilterState` / `FilterAction`）。
 
-### 5.7 キャッシュ戦略
+| フィルター | 選択肢 |
+|-----------|--------|
+| 区分（type） | すべて / 国立 / 公立 / 私立 |
+| 学部（faculty） | すべて / 文系 / 理系 / 医療系 / 芸術系 / 体育系 |
+| 日程（schedule） | すべて / 前期 / 後期 / 中期 / 共テ利用 |
 
-**SimpleCache<T>**（メモリ内 Map + TTL）:
-- 検索API: 24時間TTL、キーに `q|type|schedule|faculty|page`
-- サジェストAPI: 24時間TTL、キーに `q`
+### 7.6 result-list.tsx
 
-**CDNキャッシュ**:
-- 両APIとも `Cache-Control: public, s-maxage=86400, stale-while-revalidate=172800`
-- Vercel Edge Network に24時間キャッシュ
+結果を matchType 別にグループ表示（exact → code → prefix → partial 順）。
 
-理由: データ更新頻度が2週間に1回未満のため、キャッシュでDB負荷とレイテンシを削減。
+| グループ | ラベル |
+|---------|--------|
+| `exact` | 完全一致（大学名） |
+| `code` | 完全一致（コード） |
+| `prefix` | コード前方一致 |
+| `partial` | 部分一致 |
 
-### 5.8 スマホ対応
+- PC: `<table>` 表示（`hidden md:block`）、`whitespace-nowrap`
+- モバイル: カード表示（`md:hidden`）、大学名は `truncate` + `min-w-0` で長い場合に `…` 省略
+- ページネーション: 「← 前へ / N / M / 次へ →」
 
-- **iOSズーム防止**: input に `text-base`（16px）を指定。iOS Safariは15px以下で入力時に自動ズームするが、16px以上なら発生しない
-- **フォーム送信**: `<form>` ラップ + `enterKeyHint="search"` でキーボードのリターンキーが「検索」に
-- **検索タイプ**: `type="text"` + 独自クリアボタン。`type="search"` にするとChromeがネイティブの×を出して重複する
-- **レイアウト**: カード（モバイル）/ テーブル（PC）のレスポンシブ切り替え
-- **autofocus不使用**: スマホでキーボードが自動的に出て画面を占有するのを防止
+---
 
-### 5.9 検索ロジック
+## 8. 検索ロジック
 
-**マッチング種別の判定**（SQLのCASE式）:
+### 8.1 マッチング種別判定
+
+SQLのCASE式で行う：
 
 ```sql
 CASE
-  WHEN university = ?                THEN 0  -- 完全一致（大学名exact）
-  WHEN university = ? || '大学'       THEN 0  -- "東京" で "東京大学" にヒット
-  WHEN code = ?                       THEN 1  -- コード完全一致
-  WHEN code || '-' LIKE ?             THEN 2  -- コード前方一致（例: 1140-%）
-  WHEN university LIKE ?              THEN 3  -- 大学名部分一致
-  ELSE 4                                      -- その他部分一致（学部・学科）
+  WHEN university = ?                        THEN 0  -- exact（大学名完全一致）
+  WHEN university = ? || '大学'              THEN 0  -- "東京" → "東京大学"
+  WHEN university = ? || '大学校'            THEN 0
+  WHEN code = ?                              THEN 1  -- code（コード完全一致）
+  WHEN REPLACE(code, '-', '') = ?            THEN 1  -- ハイフンなしでコード一致
+  WHEN code || '-' LIKE ?                    THEN 2  -- prefix（コード前方一致）
+  WHEN REPLACE(code, '-', '') LIKE ?         THEN 2
+  WHEN university LIKE ?                     THEN 3  -- partial（大学名LIKE）
+  ELSE 4
 END
 ```
 
-**ソート順**: `ORDER BY match_rank, rank, university, faculty, department`
-- 最初にマッチ種別でグループ化（exact → code → prefix → partial）
-- 同グループ内は大学ランク順（東京一工が先頭）
-- さらに大学名・学部名・学科名で整列
+`match_type` も同様のCASE式で `exact` / `code` / `prefix` / `partial` を判定。
 
-**フィルター適用**: WHERE句に動的にAND条件を追加
-- type: `CASE WHEN SUBSTR(code,1,1)=1 THEN '国立' WHEN ...` の動的SQL
-- schedule: `schedule = ?`
-- faculty: プリセットのLIKE条件（例: 文系は faculty LIKE '%文%' OR '%法%' OR ...）
+**クエリ正規化**: `normalizeSearchQuery()` で末尾の「大学」「大」を除去。
+ただし元データの大学名には「大学」が含まれているため、一致判定は元の文字列と除去後の両方で行う。
 
----
+### 8.2 ハイフンなしコード対応
 
-## 6. データクリーニング記録
+コード `1140-91-0010` と `1140910010` の両方の入力形式に対応：
+- `raw.replace(/-/g, "")` でハイフンを除去した文字列をコード検索に使用
+- `REPLACE(code, '-', '')` でDB側でもハイフン除去して比較
+- 前方一致も同様にハイフンなしで効く（例: `114091` → `1140-91-xxxx` にマッチ）
 
-### 6.1 元データの構造
+### 8.3 名称変更大学の検索
 
-**`source/codelist.xlsx`** をCSVエクスポートした **`source/codelist.csv`**（23,307行 + ヘッダー1行）がベース。
+大学名に `(旧名: XXX)` が含まれているため、`university LIKE` で旧名でもヒットする。
+例: 「広島女学院」→ `YIC学院大学 (旧名: 広島女学院大学)` がマッチ。
 
-| カラム | 型 | 説明 |
-|-------|-----|------|
-| 大学 | string | 大学名（省略形） |
-| 学部名 | string | 学部名 |
-| 学科名 | string | 学科名（専攻・コースを含む場合あり） |
-| 日程 | string | 入試日程（共/前/後/中/独/二） |
-| 入試方式 | string | 入試方式（978種類、自由入力のため不統一） |
-| 10桁コード | string | `XXXX-XX-XXXX` 形式、全行ユニーク |
+### 8.4 フィルター条件
 
-### 6.2 問題: ヘッダー行のデータ混入
+学部フィルターはプリセットのLIKE条件：
 
-**発見数: 180行、全単一行ブロック**
+| 系統 | LIKE条件 |
+|------|---------|
+| 文系 | `faculty LIKE '%文%' OR '%法%' OR '%経済%' OR '%経営%' OR '%社会%' OR '%外国語%' OR '%国際%' OR '%コミュニケーション%' OR '%英語%' OR '%心理%' OR '%人間%' OR '%教育%' OR '%神学%' OR '%学芸%' OR '%教養%'` |
+| 理系 | `faculty LIKE '%理%' OR '%工%' OR '%情報%' OR '%建築%' OR '%農%' OR '%獣医%' OR '%生物%' OR '%化学%' OR '%物理%' OR '%環境%' OR '%理工%' OR '%人間%' OR '%教育%'` |
+| 医療系 | `faculty LIKE '%医%' OR '%歯%' OR '%薬%' OR '%看護%' OR '%保健%' OR '%医療%' OR '%リハ%'` |
+| 芸術系 | `faculty LIKE '%芸術%' OR '%音楽%' OR '%美術%' OR '%デザイン%' OR '%造形%' OR '%映画%'` |
+| 体育系 | `faculty LIKE '%体育%' OR '%スポーツ%'` |
 
-元のExcelシート内で、本来シート先頭にのみ存在すべきヘッダー行（`大学,学部名,学科名,日程,入試方式,10桁コード`）が、データの途中に計180回埋め込まれていた。原因はExcelの結合セルを利用したレイアウトで、印刷用のページ区切りやセクション区切りとしてヘッダー行が残存したと推定される。
+**教育学部・人間科学部**は文系/理系両方に含める（学部によって文理が異なるため）。
 
-**影響**: これらの行を単純に前方補完（forward-fill）すると、ヘッダー行の値（`学部名`, `学科名`, `日程`, `入試方式`, `10桁コード`）が後続のデータ行に伝搬し、全642行が汚染される。
+### 8.5 ソート順
 
-### 6.3 クリーニング手順
+```sql
+ORDER BY match_rank, rank, university, faculty, department
+```
 
-1. **ヘッダー行除去**: 10桁コード列が `10桁コード` の行（180行）を特定し削除
-2. **前方補完（forward-fill）**: Excelの結合セル由来の空セルを直前の非空の値で埋める
-3. **大学変更時のリセット**: 大学名カラムに新しい値が出現したとき、学部名・学科名・日程・方式を空にリセット（別大学の値の混入を防止）
-
-### 6.4 クリーニング結果
-
-| 指標 | 値 |
-|------|-----|
-| クリーニング後行数 | 23,127行 |
-| 大学数 | 789大学 |
-| 10桁コードの一意性 | 完全（重複0） |
-| 4桁コード↔大学名の整合性 | 完全（不一致0） |
-
-### 6.5 残課題（元データ由来）
-
-- **日程なし・方式あり**: 1,267行 → 方式カラムに日程情報が内包（`Ⅰ期`, `前期`, `中期` など）
-- **日程・方式両方なし**: 103行 → 8桁コード相当のエントリ
-- **入試方式の表記ゆれ**: 978種類（`Ⅰ期`, `Ⅰ期１`, `前期３`, `Ａ`, `前期Ａ`, `併用` など統一ルールなし）
-- **大学名**: 全行が省略形、正式名称とのマッピングなし
-- **学科名**: スラッグ区切りで専攻情報を含む（`人文／ 現代文`）、全角スペース混入
-
-### 6.6 ファイル構成
-
-| ファイル | 説明 |
-|---------|------|
-| `source/codelist.csv` | **元データ（未編集）** — ヘッダー行180行を含む生データ |
-| `source/codelist_clean.csv` | クリーニング済みデータ（forward-fill + ヘッダー行除去済み、23,127行、rankカラム含む） |
+matchType グループ順 → 大学ランク順 → 大学名 → 学部名 → 学科名
 
 ---
 
-## 7. 参考実装（既存サイト）
+## 9. キャッシュ戦略
 
-- [2026年度入試大学コード検索サイト](https://tkhub.cybranceehost.com/univcode/home.html)
-  - PHP + 単一HTML（result.php）
-  - 大学名を選択 → 結果ページに遷移
-  - 簡易的なクイックボタン（主要大学25校）
-  - データはおそらくPHPの配列に直書き
+### 9.1 SimpleCache（サーバーサイド・インメモリ）
+
+汎用キャッシュクラス:
+
+```typescript
+class SimpleCache<T> {
+  private store: Map<string, { data: T; expiry: number }>;
+  constructor(ttlMs: number = 5 * 60 * 1000);
+  get(key: string): T | undefined;   // 有効期限内ならデータ返却、期限切れならdelete
+  set(key: string, data: T): void;
+  clear(): void;
+  get size(): number;
+}
+```
+
+| API | キャッシュキー | TTL |
+|-----|--------------|-----|
+| `/api/search` | `q|type|schedule|faculty|page` | 24時間 |
+| `/api/universities` | `q` | 24時間 |
+
+### 9.2 CDNキャッシュ
+
+両APIとも Edge Networkに24時間キャッシュ：
+`Cache-Control: public, s-maxage=86400, stale-while-revalidate=172800`
 
 ---
 
-## 8. 用語の定義
+## 10. UI/UX 設計
 
-| 用語 | 説明 |
+### 10.1 カラーパレット
+
+CSS変数（`@theme inline` で定義）：
+
+| 変数 | 値 | 用途 |
+|------|-----|------|
+| `--color-background` | `oklch(97% 0.003 250)` | ページ背景（薄いグレー） |
+| `--color-surface` | `oklch(100% 0 0)` | カード/div背景 |
+| `--color-foreground` | `oklch(18% 0.012 250)` | テキスト色 |
+| `--color-accent` | `#4a6fa5` | アクセントカラー（青） |
+| `--color-muted-foreground` | `oklch(52% 0.012 250)` | サブテキスト |
+| `--color-border` | `oklch(90% 0.006 250)` | 枠線 |
+| `--color-hover` | `oklch(95% 0.008 250)` | ホバー背景 |
+
+ライトテーマ固定（ダークモードなし）。
+
+### 10.2 レスポンシブデザイン
+
+| ブレークポイント | 表示切り替え |
+|-----------------|-------------|
+| デフォルト（モバイル） | カード表示 + 検索ボタン非表示 |
+| `sm` (640px) | 検索ボタン表示 |
+| `md` (768px) | テーブル表示 + カード非表示 |
+| `max-w-4xl` | コンテンツ最大幅（~896px） |
+
+### 10.3 モバイル対応ポイント
+
+- input に `text-[16px]`（iOS自動ズーム防止）
+- `enterKeyHint="search"` でキーボードリターンキーに「検索」
+- `type="text"` で独自クリアボタン（`type="search"` にするとChromeのネイティブ×と重複）
+- autofocus不使用（スマホでキーボード自動表示を防止）
+- `onPointerDown` でタップ即座にサジェスト選択
+- `onBlur` に200ms遅延（ドロップダウン内クリックを弾かない）
+- 検索ボタンは640px以上でのみ表示（モバイルはEnterキーで送信）
+- モバイルカードの大学名: `truncate` + `min-w-0` で長い場合に `…` 省略
+
+### 10.4 アニメーション・トランジション
+
+| 要素 | 効果 |
 |------|------|
-| 大学コード（4桁） | 大学・短大を識別する4桁の番号 |
-| 学部学科コード（4桁） | 学部2桁 + 学科2桁 |
-| 8桁コード | 大学4桁 + 学部2桁 + 学科2桁 |
-| 10桁コード | 大学4桁 + 学部2桁 + 学科2桁 + 日程1桁 + 方式1桁 |
-| 日程コード | 入試の日程・選抜区分（前期/後期/共通テスト利用など） |
-| 方式コード | 入試方式・試験科目型の区別 |
+| タブ切り替え | `active:scale-95`（押し込み感） |
+| 検索バー | `focus-within:shadow-[0_8px_24px_rgba(74,111,165,0.10)]` |
+| 検索バー周辺 | radial-gradient glow |
+| 結果行ホバー | `hover:bg-muted/40`、150ms transition |
+| スピナー | `animate-spin` |
+| クイック検索ボタン | `active:scale-[0.97]`、ホバーで枠線変更 |
 
 ---
 
-## 9. 開発メモ
+## 11. 型定義
 
-### 9.1 設計判断
+```typescript
+// APIレスポンスの1行分
+type SearchResult = {
+  id: number;
+  university: string;    // "YIC学院大学 (旧名: 広島女学院大学)"
+  faculty: string;
+  department: string;
+  schedule: string;
+  method: string;
+  code: string;          // "XXXX-XX-XXXX" 形式
+  matchType: string;     // "exact" | "code" | "prefix" | "partial"
+  univType: string;      // "国立" | "公立" | "私立"
+  rank: number;          // 0-5
+};
 
-- **DB正規化しない**: 23K行1.3MBではJOINのコストがメリットを上回る。年度更新の簡便さ優先
-- **FTS5よりLIKE検索**: 23K行なら全件スキャンでも十分。コード `1140-91-0010` をFTSトークナイザが正しく扱える保証がない
-- **shadcn/uiのPopover+Commandを廃止**: 二重入力構造がスマホで使いづらい。独自のinput+サジェストドロップダウン
-- **キャッシュ長め（24時間）**: データ更新頻度が低いためCDNエッジキャッシュでコスト削減
-- **教育学部・人間科学部**: 文系/理系 両方のフィルターに含める
-- **クイック検索は初期表示のみ**: 検索後は非表示に（スペース節約）
+// /api/search のレスポンス全体
+type SearchResponse = {
+  results: SearchResult[];
+  total: number;
+  exactCount: number;
+  codeCount: number;
+  page: number;
+  limit: number;
+};
 
-### 9.2 使わなかったもの
+// DBの生行（ASで計算カラムが追加される）
+type DbRow = {
+  id: number;
+  university: string;
+  faculty: string;
+  department: string;
+  schedule: string;
+  method: string;
+  code: string;
+  rank: number;
+  match_rank: number;   // SQLのCASE式結果
+  match_type: string;   // SQLのCASE式結果
+  univ_type: string;    // SQLのCASE式結果
+};
 
-- shadcn/ui 全コンポーネント（button, command, dialog, input, popover, textarea, input-group）→ 全て未使用のため削除済み
-- エラーバウンダリ → デバッグ用に一時導入後削除
-- Postgres / Supabase → Turso（無料枠制限）
+// クイック検索ボタン
+type QuickSearchItem = {
+  label: string;  // 表示ラベル（例: "東京大"）
+  query: string;  // 検索クエリ（例: "東京大学"）
+};
+```
+
+---
+
+## 12. データの注意事項
+
+### 12.1 元データ由来の特性
+
+- **日程なし・方式あり**: 1,267行 → 方式カラムに日程情報が内包（「Ⅰ期」「前期」「中期」など）
+- **日程・方式両方なし**: 103行 → 8桁コード相当（模試の回によって使われる）
+- **入試方式の表記ゆれ**: 978種類（「Ⅰ期」「Ⅰ期１」「前期３」「Ａ」「前期Ａ」「併用」など統一ルールなし）
+- **大学名**: 全行が省略形（正式名称とのマッピングなし）
+- **学科名**: スラッグ区切りで専攻情報を含む、全角スペース混入
+
+### 12.2 開発判断
+
+- **DB正規化しない**: 23K行ではJOINよりフラットテーブルが実用的。年度更新の簡便さ優先
+- **FTS5よりLIKE検索**: 23K行なら全件スキャンで十分。コード `1140-91-0010` をFTSトークナイザが正しく扱える保証がない
+- **shadcn/ui不使用**: Popover+Commandの二重入力がスマホで使いづらい。独自のinput+サジェストドロップダウン
+- **キャッシュ長め**: データ更新頻度が低いためCDNエッジキャッシュでコスト削減
+- **名称変更はuniiversity名に直接旧名併記**: aliases カラムもDBに存在するがAPIでは使用せず、`university LIKE` で両方の名称を検索可能にする方式
+- **ハイフンはDBに保持**: 表示用フォーマットは `XXXX-XX-XXXX` のまま、検索時に `REPLACE` でハイフン除去比較

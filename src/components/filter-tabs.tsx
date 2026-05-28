@@ -28,7 +28,7 @@ const SCHEDULE_TABS = [
   { label: "前期", value: "前" },
   { label: "後期", value: "後" },
   { label: "中期", value: "中" },
-  { label: "共通", value: "共" },
+  { label: "共テ利用", value: "共" },
 ];
 
 const FACULTY_TABS = [
