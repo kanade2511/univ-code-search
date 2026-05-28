@@ -117,8 +117,8 @@ export async function GET(request: NextRequest) {
             ORDER BY match_rank, rank, university, faculty, department
             LIMIT ? OFFSET ?`,
       args: [
-        raw, q, q, q, q, prefixPattern, pattern, codeQuery, codePrefixPattern,
-        raw, q, q, q, q, prefixPattern, codeQuery, codePrefixPattern,
+        raw, q, q, q, q, codeQuery, prefixPattern, codePrefixPattern, pattern,
+        raw, q, q, q, q, codeQuery, prefixPattern, codePrefixPattern,
         ...baseArgs, ...filterArgs,
         limit, offset,
       ],
