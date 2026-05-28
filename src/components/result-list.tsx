@@ -56,8 +56,8 @@ function MobileCards({ items }: { items: SearchResult[] }) {
     <div className="md:hidden space-y-3">
       {items.map((r) => (
         <div key={r.id} className="rounded-xl border border-border bg-popover p-3.5 shadow-sm">
-          <div className="flex items-start justify-between gap-2 mb-1.5">
-            <span className="text-sm font-medium text-foreground">{r.university}</span>
+          <div className="flex items-start justify-between gap-2 mb-1.5 min-w-0">
+            <span className="text-sm font-medium text-foreground truncate">{r.university}</span>
             <span className="shrink-0 font-mono text-xs text-accent font-medium">{r.code}</span>
           </div>
           <div className="text-xs text-muted-foreground mb-1.5">
