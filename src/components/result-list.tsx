@@ -107,8 +107,8 @@ function DesktopTable({ items }: { items: SearchResult[] }) {
                         <th className="text-left px-4 py-3 font-medium text-muted-foreground text-xs">日程</th>
                         <th className="text-left px-4 py-3 font-medium text-muted-foreground text-xs">方式</th>
                         <th className="text-left px-4 py-3 font-medium text-muted-foreground text-xs font-mono">コード</th>
-                        <th className="text-center px-2 py-3 font-medium text-muted-foreground text-xs w-10">
-                            <span className="text-muted-foreground text-xs font-medium">ブックマーク</span>
+                        <th className="text-center px-3 py-3 font-medium text-muted-foreground text-xs w-24">
+                            ブックマーク
                         </th>
                     </tr>
                 </thead>
@@ -126,7 +126,7 @@ function DesktopTable({ items }: { items: SearchResult[] }) {
                             <td className="px-4 py-3 whitespace-nowrap">
                                 <CopyCodeButton code={r.code} />
                             </td>
-                                <td className="px-4 py-3 text-center">
+                                <td className="px-3 py-3 text-center w-24">
                                     <FavoriteButton code={r.code} item={r} />
                                 </td>
                             </tr>
