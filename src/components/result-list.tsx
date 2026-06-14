@@ -29,6 +29,8 @@ function FavoriteButton({ code, item }: { code: string; item: SearchResult }) {
             university: item.university,
             faculty: item.faculty,
             department: item.department,
+            schedule: item.schedule,
+            method: item.method,
             code: item.code,
             univType: item.univType,
             addedAt: Date.now(),
@@ -37,17 +39,23 @@ function FavoriteButton({ code, item }: { code: string; item: SearchResult }) {
     };
 
     return (
-        <Heart
-            className={`w-3.5 h-3.5 cursor-pointer transition-all shrink-0 ${
-                fav
-                    ? "fill-accent text-accent"
-                    : "text-muted-foreground/30 hover:text-accent/50"
-            }`}
+        <button
             onClick={(e) => {
                 e.stopPropagation();
                 handleToggle();
             }}
-        />
+            className={`shrink-0 inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs transition-all cursor-pointer ${
+                fav
+                    ? "bg-pink-50 text-pink-600 border border-pink-200 hover:bg-pink-100"
+                    : "text-muted-foreground/60 hover:text-pink-500 hover:bg-pink-50/50 border border-border/60 hover:border-pink-200/50"
+            }`}
+            aria-label={fav ? `${item.university} をお気に入りから削除` : `${item.university} をお気に入りに追加`}
+        >
+            <Heart
+                className={`w-3 h-3 ${fav ? "fill-pink-500 text-pink-500" : ""}`}
+            />
+            お気に入り
+        </button>
     );
 }
 
@@ -75,23 +83,25 @@ function CopyCodeButton({ code }: { code: string }) {
         }
     };
 
-    if (copied) {
-        return (
-            <span className="text-green-600 text-xs inline-flex items-center gap-0.5 shrink-0">
-                <Check className="w-3 h-3" />
-                コピーしました
-            </span>
-        );
-    }
-
     return (
-        <Copy
-            className="w-3.5 h-3.5 cursor-pointer hover:text-accent/70 transition-colors shrink-0"
+        <button
             onClick={(e) => {
                 e.stopPropagation();
                 handleCopy();
             }}
-        />
+            className={`shrink-0 inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs transition-all cursor-pointer ${
+                copied
+                    ? "bg-green-50 text-green-600"
+                    : "text-muted-foreground/60 hover:text-accent hover:bg-accent/5 border border-border/60 hover:border-accent/30"
+            }`}
+            aria-label={`コード ${code} をコピー`}
+        >
+            {copied ? (
+                <Check className="w-3 h-3" />
+            ) : (
+                <Copy className="w-3 h-3" />
+            )}
+        </button>
     );
 }
 
@@ -120,12 +130,12 @@ function DesktopTable({ items }: { items: SearchResult[] }) {
                             <td className="px-4 py-3 text-muted-foreground/70 whitespace-nowrap">{r.department}</td>
                             <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">{r.schedule || "-"}</td>
                             <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">{r.method || "-"}</td>
-                            <td className="px-4 py-3 font-mono text-accent font-medium whitespace-nowrap">
-                                <span className="inline-flex items-center gap-1.5">
-                                    <FavoriteButton code={r.code} item={r} />
-                                    {r.code}
+                            <td className="px-4 py-3 font-mono whitespace-nowrap">
+                                <div className="text-accent font-medium mb-1">{r.code}</div>
+                                <div className="inline-flex items-center gap-1.5">
                                     <CopyCodeButton code={r.code} />
-                                </span>
+                                    <FavoriteButton code={r.code} item={r} />
+                                </div>
                             </td>
                         </tr>
                     ))}
@@ -142,11 +152,15 @@ function MobileCards({ items }: { items: SearchResult[] }) {
                 <div key={r.id} className="rounded-xl border border-border bg-popover p-3.5 shadow-sm">
                     <div className="flex items-start justify-between gap-2 mb-1.5 min-w-0">
                         <span className="text-sm font-medium text-foreground truncate">{r.university}</span>
-                        <span className="shrink-0 font-mono text-xs text-accent font-medium inline-flex items-center gap-1">
-                            <FavoriteButton code={r.code} item={r} />
-                            {r.code}
-                            <CopyCodeButton code={r.code} />
-                        </span>
+                        <div className="shrink-0 text-right">
+                            <div className="inline-flex items-center gap-1 mb-1">
+                                <span className="font-mono text-xs text-accent font-medium">{r.code}</span>
+                                <CopyCodeButton code={r.code} />
+                            </div>
+                            <div>
+                                <FavoriteButton code={r.code} item={r} />
+                            </div>
+                        </div>
                     </div>
                     <div className="text-xs text-muted-foreground mb-1.5">
                         {r.faculty}

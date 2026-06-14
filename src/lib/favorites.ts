@@ -6,6 +6,8 @@ export type FavoriteItem = {
     university: string
     faculty: string
     department: string
+    schedule: string
+    method: string
     code: string
     univType: string
     addedAt: number

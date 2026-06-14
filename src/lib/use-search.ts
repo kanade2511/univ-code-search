@@ -5,6 +5,7 @@ import { useQueryState, parseAsString, parseAsInteger } from "nuqs";
 import type { SearchResult } from "@/lib/types";
 import type { FilterAction, FilterState } from "@/components/filter-tabs";
 import { sanitizeQuery } from "@/lib/query";
+import { isFavorite } from "@/lib/favorites";
 
 export function useSearch() {
     // URL state — nuqs handles sync, typing, defaults
@@ -38,6 +39,7 @@ export function useSearch() {
     const [total, setTotal] = useState(0);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
+    const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
 
     // Suggestions
     const [suggestions, setSuggestions] = useState<string[]>([]);
@@ -204,12 +206,17 @@ export function useSearch() {
         };
     }, []);
 
-    const totalPages = Math.ceil(total / 50);
+    const displayResults = showFavoritesOnly
+        ? results.filter((r) => isFavorite(r.code))
+        : results;
+    const displayTotal = showFavoritesOnly ? displayResults.length : total;
+
+    const totalPages = Math.ceil(displayTotal / 50);
 
     return {
-        query: inputValue, // show immediate input value, not debounced URL value
-        results,
-        total,
+        query: inputValue,
+        results: displayResults,
+        total: displayTotal,
         loading,
         error,
         page,
@@ -217,6 +224,8 @@ export function useSearch() {
         suggestions,
         suggestLoading,
         filterState,
+        showFavoritesOnly,
+        setShowFavoritesOnly,
         handleValueChange,
         handleSubmit,
         handleQuickSearch,

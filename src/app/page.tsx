@@ -73,7 +73,7 @@ function HomeContent() {
     query, results, total, loading, error, page, totalPages,
     suggestions, suggestLoading, filterState,
     handleValueChange, handleSubmit, handleQuickSearch, handleClear,
-    handleFilterChange,
+    handleFilterChange, showFavoritesOnly, setShowFavoritesOnly,
     setPage,
   } = useSearch();
 
@@ -121,12 +121,25 @@ function HomeContent() {
 
       {query && (
         <div className="mb-4">
-          <button
-            onClick={handleClear}
-            className="mb-3 text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
-          >
-            ← 戻る
-          </button>
+          <div className="flex items-center justify-between mb-3">
+            <button
+              onClick={handleClear}
+              className="text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+            >
+              ← 戻る
+            </button>
+            <button
+              onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
+              className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs transition-all cursor-pointer ${
+                showFavoritesOnly
+                  ? "bg-pink-50 text-pink-600 border border-pink-200"
+                  : "text-muted-foreground/60 hover:text-pink-500 border border-border/60 hover:border-pink-200/50"
+              }`}
+            >
+              <Heart className={`w-3 h-3 ${showFavoritesOnly ? "fill-pink-500 text-pink-500" : ""}`} />
+              お気に入りのみ
+            </button>
+          </div>
           <FilterTabs state={filterState} onChange={handleFilterChange} />
         </div>
       )}
