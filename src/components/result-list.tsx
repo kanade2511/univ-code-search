@@ -2,7 +2,7 @@
 
 import type { SearchResult } from "@/lib/types";
 import { useState } from "react";
-import { Copy, Check, Heart } from "lucide-react";
+import { Copy, Check, Bookmark } from "lucide-react";
 import { isFavorite, toggleFavorite } from "@/lib/favorites";
 
 type Props = {
@@ -39,23 +39,18 @@ function FavoriteButton({ code, item }: { code: string; item: SearchResult }) {
     };
 
     return (
-        <button
+        <Bookmark
             onClick={(e) => {
                 e.stopPropagation();
                 handleToggle();
             }}
-            className={`shrink-0 inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs transition-all cursor-pointer ${
+            className={`w-4 h-4 cursor-pointer transition-all shrink-0 ${
                 fav
-                    ? "bg-pink-50 text-pink-600 border border-pink-200 hover:bg-pink-100"
-                    : "text-muted-foreground/60 hover:text-pink-500 hover:bg-pink-50/50 border border-border/60 hover:border-pink-200/50"
+                    ? "fill-pink-500 text-pink-500"
+                    : "text-muted-foreground/20 hover:text-pink-400"
             }`}
-            aria-label={fav ? `${item.university} をお気に入りから削除` : `${item.university} をお気に入りに追加`}
-        >
-            <Heart
-                className={`w-3 h-3 ${fav ? "fill-pink-500 text-pink-500" : ""}`}
-            />
-            お気に入り
-        </button>
+            aria-label={fav ? `${item.university} をブックマークから削除` : `${item.university} をブックマークに追加`}
+        />
     );
 }
 
@@ -118,7 +113,7 @@ function DesktopTable({ items }: { items: SearchResult[] }) {
                         <th className="text-left px-4 py-3 font-medium text-muted-foreground text-xs">方式</th>
                         <th className="text-left px-4 py-3 font-medium text-muted-foreground text-xs font-mono">コード</th>
                         <th className="text-center px-2 py-3 font-medium text-muted-foreground text-xs w-10">
-                            <Heart className="w-3.5 h-3.5 mx-auto text-muted-foreground/40" />
+                            <Bookmark className="w-3.5 h-3.5 mx-auto text-muted-foreground/40" />
                         </th>
                     </tr>
                 </thead>

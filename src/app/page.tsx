@@ -7,7 +7,7 @@ import { FilterTabs } from "@/components/filter-tabs";
 import { ResultList } from "@/components/result-list";
 import { useSearch } from "@/lib/use-search";
 import { useState, useEffect } from "react";
-import { Heart, X } from "lucide-react";
+import { Bookmark, X } from "lucide-react";
 import { getFavorites, removeFavorite, onFavoritesChange, type FavoriteItem } from "@/lib/favorites";
 
 function FavoritesSection({ onSelect }: { onSelect: (q: string) => void }) {
@@ -26,9 +26,9 @@ function FavoritesSection({ onSelect }: { onSelect: (q: string) => void }) {
     return (
         <div className="mt-10">
             <div className="flex items-center gap-2 mb-3">
-                <Heart className="w-4 h-4 text-pink-500 fill-pink-500" />
+                <Bookmark className="w-4 h-4 text-pink-500 fill-pink-500" />
                 <span className="text-xs font-semibold tracking-[0.04em] uppercase text-muted-foreground">
-                    お気に入り
+                    ブックマーク
                 </span>
                 <span className="text-xs text-muted-foreground/50">({items.length})</span>
             </div>
@@ -59,7 +59,7 @@ function FavoritesSection({ onSelect }: { onSelect: (q: string) => void }) {
                                 refresh();
                             }}
                             className="shrink-0 p-1.5 rounded-md text-muted-foreground/30 hover:text-destructive hover:bg-red-50 transition-colors opacity-0 group-hover:opacity-100 cursor-pointer"
-                            aria-label={`${f.university} をお気に入りから削除`}
+                            aria-label={`${f.university} をブックマークから削除`}
                         >
                             <X className="w-3.5 h-3.5" />
                         </button>

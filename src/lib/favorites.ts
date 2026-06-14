@@ -1,4 +1,4 @@
-const STORAGE_KEY = 'univ-code-favorites'
+const STORAGE_KEY = 'univ-code-bookmarks'
 const MAX_ITEMS = 50
 
 export type FavoriteItem = {
