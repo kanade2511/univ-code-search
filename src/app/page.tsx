@@ -26,99 +26,43 @@ function FavoritesSection({ onSelect }: { onSelect: (q: string) => void }) {
     return (
         <div className="mt-10">
             <div className="flex items-center gap-2 mb-3">
-                <Heart className="w-4 h-4 text-accent fill-accent" />
+                <Heart className="w-4 h-4 text-pink-500 fill-pink-500" />
                 <span className="text-xs font-semibold tracking-[0.04em] uppercase text-muted-foreground">
                     お気に入り
                 </span>
-                <span className="text-xs text-muted-foreground/50">
-                    ({items.length})
-                </span>
+                <span className="text-xs text-muted-foreground/50">({items.length})</span>
             </div>
-
-            {/* Desktop: table */}
-            <div className="hidden md:block overflow-hidden rounded-xl border border-border">
-                <table className="w-full text-sm">
-                    <thead>
-                        <tr className="bg-muted/50 border-b border-border">
-                            <th className="text-left px-4 py-3 font-medium text-muted-foreground text-xs">大学</th>
-                            <th className="text-left px-4 py-3 font-medium text-muted-foreground text-xs">区分</th>
-                            <th className="text-left px-4 py-3 font-medium text-muted-foreground text-xs">学部</th>
-                            <th className="text-left px-4 py-3 font-medium text-muted-foreground text-xs">学科</th>
-                            <th className="text-left px-4 py-3 font-medium text-muted-foreground text-xs">日程</th>
-                            <th className="text-left px-4 py-3 font-medium text-muted-foreground text-xs">方式</th>
-                            <th className="text-left px-4 py-3 font-medium text-muted-foreground text-xs font-mono">コード</th>
-                            <th className="text-center px-2 py-3 font-medium text-muted-foreground text-xs w-10" />
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {items.map((f) => (
-                            <tr
-                                key={f.code}
-                                className="border-b border-border/50 last:border-b-0 hover:bg-muted/40 transition-colors duration-150 cursor-pointer"
-                                onClick={() => onSelect(f.university)}
-                            >
-                                <td className="px-4 py-3 text-foreground font-medium whitespace-nowrap">{f.university}</td>
-                                <td className="px-4 py-3 text-muted-foreground whitespace-nowrap text-xs">{f.univType}</td>
-                                <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">{f.faculty}</td>
-                                <td className="px-4 py-3 text-muted-foreground/70 whitespace-nowrap">{f.department || "-"}</td>
-                                <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">{f.schedule || "-"}</td>
-                                <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">{f.method || "-"}</td>
-                                <td className="px-4 py-3 font-mono text-accent font-medium whitespace-nowrap">{f.code}</td>
-                                <td className="px-2 py-3 text-center">
-                                    <button
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            removeFavorite(f.code);
-                                            refresh();
-                                        }}
-                                        className="p-1 text-muted-foreground/30 hover:text-destructive transition-colors cursor-pointer"
-                                        aria-label={`${f.university} をお気に入りから削除`}
-                                    >
-                                        <X className="w-3.5 h-3.5" />
-                                    </button>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
-
-            {/* Mobile: list */}
-            <div className="md:hidden space-y-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
                 {items.map((f) => (
                     <div
                         key={f.code}
-                        className="rounded-xl border border-border bg-popover p-3.5 shadow-sm cursor-pointer hover:bg-muted/20 transition-colors"
+                        className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl border border-border bg-popover hover:bg-muted/20 transition-colors cursor-pointer group"
                         onClick={() => onSelect(f.university)}
                     >
-                        <div className="flex items-start justify-between gap-2 mb-2">
-                            <span className="text-sm font-medium text-foreground">{f.university}</span>
-                            <button
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    removeFavorite(f.code);
-                                    refresh();
-                                }}
-                                className="shrink-0 p-0.5 text-muted-foreground/40 hover:text-destructive transition-colors cursor-pointer"
-                                aria-label={`${f.university} をお気に入りから削除`}
-                            >
-                                <X className="w-3.5 h-3.5" />
-                            </button>
-                        </div>
-                        <div className="space-y-1 text-xs text-muted-foreground">
-                            <div className="flex gap-4">
-                                <span>区分: {f.univType}</span>
-                                <span className="font-mono text-accent">{f.code}</span>
+                        <div className="min-w-0 flex-1">
+                            <div className="text-sm font-medium text-foreground truncate">
+                                {f.university}
                             </div>
-                            <div>
-                                学部: {f.faculty}
-                                {f.department ? ` / ${f.department}` : ""}
-                            </div>
-                            <div className="flex gap-4">
-                                <span>日程: {f.schedule || "-"}</span>
-                                <span>方式: {f.method || "-"}</span>
+                            <div className="flex items-center gap-2 mt-0.5">
+                                <span className="text-xs text-muted-foreground font-mono">
+                                    {f.code}
+                                </span>
+                                <span className="text-xs text-muted-foreground/60">
+                                    {f.univType} · {f.faculty}
+                                </span>
                             </div>
                         </div>
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                removeFavorite(f.code);
+                                refresh();
+                            }}
+                            className="shrink-0 p-1.5 rounded-md text-muted-foreground/30 hover:text-destructive hover:bg-red-50 transition-colors opacity-0 group-hover:opacity-100 cursor-pointer"
+                            aria-label={`${f.university} をお気に入りから削除`}
+                        >
+                            <X className="w-3.5 h-3.5" />
+                        </button>
                     </div>
                 ))}
             </div>
