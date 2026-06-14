@@ -23,8 +23,11 @@ const GROUP_LABELS: Record<string, string> = {
 
 function FavoriteButton({ code, item }: { code: string; item: SearchResult }) {
     const [fav, setFav] = useState(() => isFavorite(code));
+    const [popping, setPopping] = useState(false);
 
     const handleToggle = () => {
+        setPopping(true);
+        setTimeout(() => setPopping(false), 400);
         const nowFav = toggleFavorite({
             id: item.id,
             university: item.university,
@@ -40,18 +43,22 @@ function FavoriteButton({ code, item }: { code: string; item: SearchResult }) {
     };
 
     return (
-        <Bookmark
-            onClick={(e) => {
-                e.stopPropagation();
-                handleToggle();
-            }}
-            className={`w-4 h-4 cursor-pointer transition-all shrink-0 ${
-                fav
-                    ? "fill-yellow-500 text-yellow-500"
-                    : "text-muted-foreground/25 hover:text-yellow-500"
-            }`}
-            aria-label={fav ? `${item.university} をブックマークから削除` : `${item.university} をブックマークに追加`}
-        />
+        <span className={`relative inline-flex items-center justify-center shrink-0 ${popping ? "animate-bookmark-burst rounded-full" : ""}`}>
+            <Bookmark
+                onClick={(e) => {
+                    e.stopPropagation();
+                    handleToggle();
+                }}
+                className={`w-4 h-4 cursor-pointer transition-all ${
+                    popping ? "animate-bookmark-pikon" : ""
+                } ${
+                    fav
+                        ? "fill-yellow-500 text-yellow-500"
+                        : "text-muted-foreground/25 hover:text-yellow-500"
+                }`}
+                aria-label={fav ? `${item.university} をブックマークから削除` : `${item.university} をブックマークに追加`}
+            />
+        </span>
     );
 }
 
