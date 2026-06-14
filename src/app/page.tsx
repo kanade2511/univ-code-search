@@ -26,7 +26,7 @@ function FavoritesSection({ onSelect }: { onSelect: (q: string) => void }) {
     return (
         <div className="mt-10">
             <div className="flex items-center gap-2 mb-3">
-                <Bookmark className="w-4 h-4 text-pink-500 fill-pink-500" />
+                <Bookmark className="w-4 h-4 text-yellow-500 fill-yellow-500" />
                 <span className="text-xs font-semibold tracking-[0.04em] uppercase text-muted-foreground">
                     ブックマーク
                 </span>
@@ -167,7 +167,9 @@ function HomeContent() {
 
       <footer className="mt-auto pt-8 pb-6 border-t border-border text-center">
         <p className="text-xs text-muted-foreground max-w-[600px] mx-auto leading-relaxed">
-          出典：ベネッセ 大学コード表 | 結果は参考値です。出願の際は必ず一次資料を確認してください。
+          出典：ベネッセ 大学コード表（2026年版）
+          <br />
+          結果は参考値です。出願の際は必ず一次資料を確認してください。
         </p>
       </footer>
     </div>
