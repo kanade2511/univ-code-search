@@ -13,6 +13,18 @@ export type FavoriteItem = {
     addedAt: number
 }
 
+type Listener = () => void
+const listeners = new Set<Listener>()
+
+export function onFavoritesChange(fn: Listener): () => void {
+    listeners.add(fn)
+    return () => { listeners.delete(fn) }
+}
+
+function notify() {
+    listeners.forEach((fn) => fn())
+}
+
 function readAll(): FavoriteItem[] {
     try {
         const raw = localStorage.getItem(STORAGE_KEY)
@@ -46,10 +58,12 @@ export function toggleFavorite(item: FavoriteItem): boolean {
     items.unshift(item)
     if (items.length > MAX_ITEMS) items.length = MAX_ITEMS
     writeAll(items)
+    notify()
     return true
 }
 
 export function removeFavorite(code: string): void {
     const items = readAll().filter((f) => f.code !== code)
     writeAll(items)
+    notify()
 }

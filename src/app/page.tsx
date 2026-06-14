@@ -8,16 +8,15 @@ import { ResultList } from "@/components/result-list";
 import { useSearch } from "@/lib/use-search";
 import { useState, useEffect } from "react";
 import { Heart, X } from "lucide-react";
-import { getFavorites, removeFavorite, type FavoriteItem } from "@/lib/favorites";
+import { getFavorites, removeFavorite, onFavoritesChange, type FavoriteItem } from "@/lib/favorites";
 
 function FavoritesSection({ onSelect }: { onSelect: (q: string) => void }) {
     const [items, setItems] = useState<FavoriteItem[]>([]);
 
     useEffect(() => {
         setItems(getFavorites());
-        const onStorage = () => setItems(getFavorites());
-        window.addEventListener('storage', onStorage);
-        return () => window.removeEventListener('storage', onStorage);
+        const unsub = onFavoritesChange(() => setItems(getFavorites()));
+        return unsub;
     }, []);
 
     const refresh = () => setItems(getFavorites());
