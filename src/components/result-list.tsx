@@ -78,25 +78,29 @@ function CopyCodeButton({ code }: { code: string }) {
         }
     };
 
+    if (copied) {
+        return (
+            <span className="inline-flex items-center gap-1 text-green-600 text-xs">
+                <Check className="w-3 h-3" />
+                コピーしました
+            </span>
+        );
+    }
+
     return (
-        <button
+        <span
             onClick={(e) => {
                 e.stopPropagation();
                 handleCopy();
             }}
-            className={`shrink-0 inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs transition-all cursor-pointer ${
-                copied
-                    ? "bg-green-50 text-green-600"
-                    : "text-muted-foreground/60 hover:text-accent hover:bg-accent/5 border border-border/60 hover:border-accent/30"
-            }`}
-            aria-label={`コード ${code} をコピー`}
+            className="inline-flex items-center gap-1.5 cursor-pointer group select-none"
+            title="クリックでコピー"
         >
-            {copied ? (
-                <Check className="w-3 h-3" />
-            ) : (
-                <Copy className="w-3 h-3" />
-            )}
-        </button>
+            <Copy className="w-3 h-3 text-muted-foreground/30 group-hover:text-accent/60 transition-colors shrink-0" />
+            <span className="font-mono text-accent font-medium group-hover:text-accent/80 transition-colors">
+                {code}
+            </span>
+        </span>
     );
 }
 
