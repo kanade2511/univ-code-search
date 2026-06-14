@@ -26,4 +26,24 @@ describe('sanitizeQuery', () => {
     it('returns the same string for already-clean input', () => {
         expect(sanitizeQuery('東京大学')).toBe('東京大学')
     })
+
+    // --- Full-width space normalization ---
+
+    it('trims full-width spaces (U+3000) from both ends', () => {
+        expect(sanitizeQuery('　　東京')).toBe('東京')
+        expect(sanitizeQuery('東京　　')).toBe('東京')
+        expect(sanitizeQuery('　　東京大学　　')).toBe('東京大学')
+    })
+
+    it('returns empty string for full-width-space-only input', () => {
+        expect(sanitizeQuery('　　　')).toBe('')
+    })
+
+    it('preserves inner full-width spaces after conversion', () => {
+        expect(sanitizeQuery('東京　　大学')).toBe('東京  大学')
+    })
+
+    it('handles mixed full-width and half-width spaces', () => {
+        expect(sanitizeQuery(' 　東京　 ')).toBe('東京')
+    })
 })

@@ -6,6 +6,67 @@ import { QuickSearch } from "@/components/quick-search";
 import { FilterTabs } from "@/components/filter-tabs";
 import { ResultList } from "@/components/result-list";
 import { useSearch } from "@/lib/use-search";
+import { useState, useEffect } from "react";
+import { Heart, X } from "lucide-react";
+import { getFavorites, removeFavorite, type FavoriteItem } from "@/lib/favorites";
+
+function FavoritesSection({ onSelect }: { onSelect: (q: string) => void }) {
+    const [items, setItems] = useState<FavoriteItem[]>([]);
+
+    useEffect(() => {
+        setItems(getFavorites());
+        const onStorage = () => setItems(getFavorites());
+        window.addEventListener('storage', onStorage);
+        return () => window.removeEventListener('storage', onStorage);
+    }, []);
+
+    const refresh = () => setItems(getFavorites());
+
+    if (items.length === 0) return null;
+
+    return (
+        <div className="mt-10">
+            <div className="flex items-center gap-2 mb-3">
+                <Heart className="w-4 h-4 text-accent fill-accent" />
+                <span className="text-xs font-semibold tracking-[0.04em] uppercase text-muted-foreground">
+                    お気に入り
+                </span>
+                <span className="text-xs text-muted-foreground/50">
+                    ({items.length})
+                </span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {items.map((f) => (
+                    <div
+                        key={f.code}
+                        className="flex items-center justify-between gap-2 px-3 py-2 rounded-lg border border-border bg-popover hover:bg-muted/20 transition-colors cursor-pointer group"
+                        onClick={() => onSelect(f.university)}
+                    >
+                        <div className="min-w-0">
+                            <div className="text-sm font-medium text-foreground truncate">
+                                {f.university}
+                            </div>
+                            <div className="text-xs text-muted-foreground font-mono">
+                                {f.code}
+                            </div>
+                        </div>
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                removeFavorite(f.code);
+                                refresh();
+                            }}
+                            className="shrink-0 p-1 text-muted-foreground/30 hover:text-destructive transition-colors opacity-0 group-hover:opacity-100 cursor-pointer"
+                            aria-label={`${f.university} をお気に入りから削除`}
+                        >
+                            <X className="w-3.5 h-3.5" />
+                        </button>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+}
 
 function HomeContent() {
   const {
@@ -51,7 +112,12 @@ function HomeContent() {
         </div>
       </div>
 
-      {!query && <QuickSearch onSelect={handleQuickSearch} />}
+      {!query && (
+        <>
+          <QuickSearch onSelect={handleQuickSearch} />
+          <FavoritesSection onSelect={handleQuickSearch} />
+        </>
+      )}
 
       {query && (
         <div className="mb-4">
