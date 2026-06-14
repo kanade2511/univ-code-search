@@ -2,8 +2,9 @@
 
 import type { SearchResult } from "@/lib/types";
 import { useState } from "react";
-import { Copy, Check, Bookmark } from "lucide-react";
+import { Copy, Bookmark } from "lucide-react";
 import { isFavorite, toggleFavorite } from "@/lib/favorites";
+import { useToast } from "@/components/toast";
 
 type Props = {
     results: SearchResult[];
@@ -55,7 +56,7 @@ function FavoriteButton({ code, item }: { code: string; item: SearchResult }) {
 }
 
 function CopyCodeButton({ code }: { code: string }) {
-    const [copied, setCopied] = useState(false);
+    const toast = useToast();
 
     const handleCopy = async () => {
         try {
@@ -71,21 +72,11 @@ function CopyCodeButton({ code }: { code: string }) {
                 document.execCommand('copy');
                 document.body.removeChild(textarea);
             }
-            setCopied(true);
-            setTimeout(() => setCopied(false), 2000);
+            toast.show(`コピーしました: ${code}`);
         } catch {
             // clipboard not available
         }
     };
-
-    if (copied) {
-        return (
-            <span className="inline-flex items-center gap-1 text-green-600 text-xs">
-                <Check className="w-3 h-3" />
-                コピーしました
-            </span>
-        );
-    }
 
     return (
         <span
