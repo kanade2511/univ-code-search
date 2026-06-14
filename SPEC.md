@@ -523,3 +523,53 @@ type QuickSearchItem = {
 - **キャッシュ長め**: データ更新頻度が低いためCDNエッジキャッシュでコスト削減
 - **名称変更はuniiversity名に直接旧名併記**: aliases カラムもDBに存在するがAPIでは使用せず、`university LIKE` で両方の名称を検索可能にする方式
 - **ハイフンはDBに保持**: 表示用フォーマットは `XXXX-XX-XXXX` のまま、検索時に `REPLACE` でハイフン除去比較
+
+---
+
+## 13. お気に入り機能
+
+### 13.1 概要
+
+ユーザーは検索結果から任意の大学コードをお気に入り登録できる。お気に入りは localStorage に保存され、トップページで一覧表示される。
+
+### 13.2 データ構造
+
+```typescript
+type FavoriteItem = {
+    id: number;
+    university: string;
+    faculty: string;
+    department: string;
+    schedule: string;
+    method: string;
+    code: string;
+    univType: string;   // "国立" | "公立" | "私立"
+    addedAt: number;     // Date.now()
+};
+```
+
+- 保存先: `localStorage` (key: `univ-code-favorites`)
+- 最大件数: 50件 (超えたら古いものを削除)
+- 重複不可 (同一 code は1件のみ)
+
+### 13.3 UI構成
+
+トップページのクエリ未入力時に表示。QuickSearch の下に配置。
+
+| デバイス | 表示形式 | 表示項目 |
+|---------|---------|---------|
+| デスクトップ (md+) | テーブル | 大学, 区分, 学部, 学科, 日程, 方式, コード, 削除ボタン |
+| モバイル | カードリスト | 全項目をインライン表示 |
+
+- テーブル行/カードをクリック → その大学名で即時検索
+- Xボタン → お気に入りから削除
+- `storage` イベントで他タブと同期
+
+### 13.4 操作
+
+| 操作 | 実装 |
+|------|------|
+| 追加 | `toggleFavorite(item)` — 存在しなければ追加（先頭）、既存なら削除 |
+| 削除 | `removeFavorite(code)` — code に一致するアイテムを削除 |
+| 判定 | `isFavorite(code)` — 登録有無を真偽値で返す |
+| 取得 | `getFavorites()` — 全アイテムを配列で返す |

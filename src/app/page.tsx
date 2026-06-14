@@ -35,32 +35,91 @@ function FavoritesSection({ onSelect }: { onSelect: (q: string) => void }) {
                     ({items.length})
                 </span>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+
+            {/* Desktop: table */}
+            <div className="hidden md:block overflow-hidden rounded-xl border border-border">
+                <table className="w-full text-sm">
+                    <thead>
+                        <tr className="bg-muted/50 border-b border-border">
+                            <th className="text-left px-4 py-3 font-medium text-muted-foreground text-xs">大学</th>
+                            <th className="text-left px-4 py-3 font-medium text-muted-foreground text-xs">区分</th>
+                            <th className="text-left px-4 py-3 font-medium text-muted-foreground text-xs">学部</th>
+                            <th className="text-left px-4 py-3 font-medium text-muted-foreground text-xs">学科</th>
+                            <th className="text-left px-4 py-3 font-medium text-muted-foreground text-xs">日程</th>
+                            <th className="text-left px-4 py-3 font-medium text-muted-foreground text-xs">方式</th>
+                            <th className="text-left px-4 py-3 font-medium text-muted-foreground text-xs font-mono">コード</th>
+                            <th className="text-center px-2 py-3 font-medium text-muted-foreground text-xs w-10" />
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {items.map((f) => (
+                            <tr
+                                key={f.code}
+                                className="border-b border-border/50 last:border-b-0 hover:bg-muted/40 transition-colors duration-150 cursor-pointer"
+                                onClick={() => onSelect(f.university)}
+                            >
+                                <td className="px-4 py-3 text-foreground font-medium whitespace-nowrap">{f.university}</td>
+                                <td className="px-4 py-3 text-muted-foreground whitespace-nowrap text-xs">{f.univType}</td>
+                                <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">{f.faculty}</td>
+                                <td className="px-4 py-3 text-muted-foreground/70 whitespace-nowrap">{f.department || "-"}</td>
+                                <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">{f.schedule || "-"}</td>
+                                <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">{f.method || "-"}</td>
+                                <td className="px-4 py-3 font-mono text-accent font-medium whitespace-nowrap">{f.code}</td>
+                                <td className="px-2 py-3 text-center">
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            removeFavorite(f.code);
+                                            refresh();
+                                        }}
+                                        className="p-1 text-muted-foreground/30 hover:text-destructive transition-colors cursor-pointer"
+                                        aria-label={`${f.university} をお気に入りから削除`}
+                                    >
+                                        <X className="w-3.5 h-3.5" />
+                                    </button>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+
+            {/* Mobile: list */}
+            <div className="md:hidden space-y-2">
                 {items.map((f) => (
                     <div
                         key={f.code}
-                        className="flex items-center justify-between gap-2 px-3 py-2 rounded-lg border border-border bg-popover hover:bg-muted/20 transition-colors cursor-pointer group"
+                        className="rounded-xl border border-border bg-popover p-3.5 shadow-sm cursor-pointer hover:bg-muted/20 transition-colors"
                         onClick={() => onSelect(f.university)}
                     >
-                        <div className="min-w-0">
-                            <div className="text-sm font-medium text-foreground truncate">
-                                {f.university}
+                        <div className="flex items-start justify-between gap-2 mb-2">
+                            <span className="text-sm font-medium text-foreground">{f.university}</span>
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    removeFavorite(f.code);
+                                    refresh();
+                                }}
+                                className="shrink-0 p-0.5 text-muted-foreground/40 hover:text-destructive transition-colors cursor-pointer"
+                                aria-label={`${f.university} をお気に入りから削除`}
+                            >
+                                <X className="w-3.5 h-3.5" />
+                            </button>
+                        </div>
+                        <div className="space-y-1 text-xs text-muted-foreground">
+                            <div className="flex gap-4">
+                                <span>区分: {f.univType}</span>
+                                <span className="font-mono text-accent">{f.code}</span>
                             </div>
-                            <div className="text-xs text-muted-foreground font-mono">
-                                {f.code}
+                            <div>
+                                学部: {f.faculty}
+                                {f.department ? ` / ${f.department}` : ""}
+                            </div>
+                            <div className="flex gap-4">
+                                <span>日程: {f.schedule || "-"}</span>
+                                <span>方式: {f.method || "-"}</span>
                             </div>
                         </div>
-                        <button
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                removeFavorite(f.code);
-                                refresh();
-                            }}
-                            className="shrink-0 p-1 text-muted-foreground/30 hover:text-destructive transition-colors opacity-0 group-hover:opacity-100 cursor-pointer"
-                            aria-label={`${f.university} をお気に入りから削除`}
-                        >
-                            <X className="w-3.5 h-3.5" />
-                        </button>
                     </div>
                 ))}
             </div>
@@ -73,7 +132,7 @@ function HomeContent() {
     query, results, total, loading, error, page, totalPages,
     suggestions, suggestLoading, filterState,
     handleValueChange, handleSubmit, handleQuickSearch, handleClear,
-    handleFilterChange, showFavoritesOnly, setShowFavoritesOnly,
+    handleFilterChange,
     setPage,
   } = useSearch();
 
@@ -91,7 +150,6 @@ function HomeContent() {
       </header>
 
       <div className="relative mb-6">
-        {/* Ambient glow behind search */}
         <div
           className="absolute pointer-events-none z-0"
           style={{
@@ -121,25 +179,12 @@ function HomeContent() {
 
       {query && (
         <div className="mb-4">
-          <div className="flex items-center justify-between mb-3">
-            <button
-              onClick={handleClear}
-              className="text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
-            >
-              ← 戻る
-            </button>
-            <button
-              onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
-              className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs transition-all cursor-pointer ${
-                showFavoritesOnly
-                  ? "bg-pink-50 text-pink-600 border border-pink-200"
-                  : "text-muted-foreground/60 hover:text-pink-500 border border-border/60 hover:border-pink-200/50"
-              }`}
-            >
-              <Heart className={`w-3 h-3 ${showFavoritesOnly ? "fill-pink-500 text-pink-500" : ""}`} />
-              お気に入りのみ
-            </button>
-          </div>
+          <button
+            onClick={handleClear}
+            className="mb-3 text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+          >
+            ← 戻る
+          </button>
           <FilterTabs state={filterState} onChange={handleFilterChange} />
         </div>
       )}

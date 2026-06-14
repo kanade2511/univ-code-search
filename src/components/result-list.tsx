@@ -117,6 +117,9 @@ function DesktopTable({ items }: { items: SearchResult[] }) {
                         <th className="text-left px-4 py-3 font-medium text-muted-foreground text-xs">日程</th>
                         <th className="text-left px-4 py-3 font-medium text-muted-foreground text-xs">方式</th>
                         <th className="text-left px-4 py-3 font-medium text-muted-foreground text-xs font-mono">コード</th>
+                        <th className="text-center px-2 py-3 font-medium text-muted-foreground text-xs w-10">
+                            <Heart className="w-3.5 h-3.5 mx-auto text-muted-foreground/40" />
+                        </th>
                     </tr>
                 </thead>
                 <tbody>
@@ -152,13 +155,10 @@ function MobileCards({ items }: { items: SearchResult[] }) {
                 <div key={r.id} className="rounded-xl border border-border bg-popover p-3.5 shadow-sm">
                     <div className="flex items-start justify-between gap-2 mb-1.5 min-w-0">
                         <span className="text-sm font-medium text-foreground truncate">{r.university}</span>
-                        <div className="shrink-0 text-right">
-                            <div className="inline-flex items-center gap-1 mb-1">
-                                <span className="font-mono text-xs text-accent font-medium">{r.code}</span>
-                                <CopyCodeButton code={r.code} />
-                            </div>
+                        <div className="shrink-0 text-right flex items-start gap-2">
+                            <FavoriteButton code={r.code} item={r} />
                             <div>
-                                <FavoriteButton code={r.code} item={r} />
+                                <CopyCodeButton code={r.code} />
                             </div>
                         </div>
                     </div>
