@@ -1,32 +1,21 @@
 import { describe, it, expect } from 'bun:test'
-import type { SearchResponse } from '../../src/lib/types'
+import type { SearchOutput } from '../../src/lib/search'
 
-/**
- * Contract test for /api/search response shape.
- * 
- * Regressions this catches:
- * - exactCount/codeCount being page-local rather than global (BUG B)
- * - Missing required fields
- * - Wrong types on fields
- */
-describe('SearchResponse contract', () => {
+describe('SearchOutput contract', () => {
     it('does not include misleading page-local exactCount/codeCount', () => {
-        // If these fields exist, they MUST represent global totals, not page-local.
-        // Since they're unused by the frontend and were page-local, they should be removed.
-        const validResponse: SearchResponse = {
+        const response: SearchOutput = {
             results: [],
             total: 0,
             page: 1,
             limit: 50,
         }
 
-        // Verify the response doesn't have exactCount/codeCount
-        expect('exactCount' in validResponse).toBe(false)
-        expect('codeCount' in validResponse).toBe(false)
+        expect('exactCount' in response).toBe(false)
+        expect('codeCount' in response).toBe(false)
     })
 
     it('has required fields with correct types', () => {
-        const response: SearchResponse = {
+        const response: SearchOutput = {
             results: [
                 {
                     id: 1,
@@ -54,14 +43,14 @@ describe('SearchResponse contract', () => {
     })
 
     it('handles empty search results', () => {
-        const emptyResponse: SearchResponse = {
+        const response: SearchOutput = {
             results: [],
             total: 0,
             page: 1,
             limit: 50,
         }
 
-        expect(emptyResponse.results).toBeArrayOfSize(0)
-        expect(emptyResponse.total).toBe(0)
+        expect(response.results).toBeArrayOfSize(0)
+        expect(response.total).toBe(0)
     })
 })

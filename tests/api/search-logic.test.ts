@@ -1,193 +1,162 @@
 import { describe, it, expect } from 'bun:test'
+import { classifyMatch, textMatches, univType, FACULTY_PATTERNS } from '../../src/lib/match'
+import type { CodeRow } from '../../src/lib/data'
 
-/**
- * Test the search matching logic extracted from search/route.ts.
- * These functions mirror the SQL CASE expressions used in the real query.
- */
-
-// Mirror of matchRankSQL / matchTypeSQL logic in TypeScript
-function classifyMatch(
-    raw: string,
-    q: string,
-    codeQuery: string,
-    row: { university: string; code: string }
-): 'exact' | 'code' | 'prefix' | 'partial' {
-    const prefixPattern = q + '%'
-    const codePrefixPattern = codeQuery + '%'
-    const pattern = '%' + q + '%'
-
-    // University exact match
-    if (
-        row.university === raw ||
-        row.university === q ||
-        row.university === q + '大学' ||
-        row.university === q + '大学校'
-    ) {
-        return 'exact'
-    }
-
-    // Code exact match
-    if (row.code === codeQuery || row.code.replace(/-/g, '') === codeQuery) {
-        return 'code'
-    }
-
-    // Code prefix match
-    const codeWithDash = row.code + '-'
-    if (
-        codeWithDash.includes(prefixPattern.replace(/%/g, '')) ||
-        row.code.replace(/-/g, '').startsWith(codePrefixPattern.replace(/%/g, ''))
-    ) {
-        return 'prefix'
-    }
-
-    // University partial match
-    if (row.university.includes(pattern.replace(/%/g, ''))) {
-        return 'partial'
-    }
-
-    return 'partial' // fallback (in SQL it's ELSE)
+const SAMPLE_ROW: CodeRow = {
+    id: 1,
+    university: '東京大学',
+    faculty: '法学部',
+    department: '法律学科',
+    schedule: '前',
+    method: '一般',
+    code: '1140-91-0010',
+    rank: 0,
+    aliases: '',
 }
 
-function classifyUnivType(code: string): '国立' | '公立' | '私立' {
-    const first = code.charAt(0)
-    if (first === '1') return '国立'
-    if (first === '2') return '公立'
-    if (first === '3') return '私立'
-    return '国立' // default (matches SQL ELSE)
-}
-
-function buildFilterClause(
-    type: string,
-    schedule: string,
-    faculty: string
-): { clause: string; hasFilter: boolean } {
-    const parts: string[] = []
-    if (type) parts.push(`univ_type = '${type}'`)
-    if (schedule) parts.push(`schedule = '${schedule}'`)
-    if (faculty) parts.push(`FACULTY_FILTER(${faculty})`) // simplified
-    const clause = parts.length > 0 ? 'AND ' + parts.join(' AND ') : ''
-    return { clause, hasFilter: parts.length > 0 }
-}
-
-describe('match classification', () => {
-    const row = { university: '東京大学', code: '1140-91-0010' }
-
-    it('classifies exact match by university name', () => {
-        expect(classifyMatch('東京大学', '東京', '東京大学', row)).toBe('exact')
-    })
-
-    it('classifies exact match with 大学 suffix completion', () => {
-        expect(classifyMatch('東京', '東京', '東京', row)).toBe('exact')
-    })
-
-    it('classifies exact match by code (without hyphens)', () => {
-        expect(classifyMatch('1140910010', '1140910010', '1140910010', row)).toBe(
-            'code'
-        )
-    })
-
-    it('classifies exact match by code (with hyphens)', () => {
-        expect(classifyMatch('1140-91-0010', '1140-91-0010', '1140910010', row)).toBe(
-            'code'
-        )
-    })
-
-    it('classifies prefix match by code', () => {
-        expect(classifyMatch('1140', '1140', '1140', row)).toBe('prefix')
-    })
-
-    it('classifies prefix match by code without hyphens', () => {
-        expect(classifyMatch('114091', '114091', '114091', row)).toBe('prefix')
-    })
-
-    it('classifies partial match by university', () => {
-        expect(classifyMatch('京大', '京大', '京大', row)).toBe('partial')
-    })
-
-    it('classifies as partial when nothing specific matches', () => {
-        // Searching for a faculty name gives partial (matched at SQL level)
-        const result = classifyMatch('法学部', '法学部', '法学部', {
-            university: '東京大学',
-            code: '1140-91-0010',
+describe('classifyMatch', () => {
+    it('exact — university name matches raw', () => {
+        expect(classifyMatch('東京大学', '東京', '東京大学', SAMPLE_ROW)).toEqual({
+            rank: 0,
+            type: 'exact',
         })
-        // Not exact, not code, not prefix, not university partial → partial
-        expect(result).toBe('partial')
-    })
-})
-
-describe('univ_type classification', () => {
-    it('classifies 1-xxxxx as 国立', () => {
-        expect(classifyUnivType('1140-91-0010')).toBe('国立')
     })
 
-    it('classifies 2-xxxxx as 公立', () => {
-        expect(classifyUnivType('2140-91-0010')).toBe('公立')
-    })
-
-    it('classifies 3-xxxxx as 私立', () => {
-        expect(classifyUnivType('3140-91-0010')).toBe('私立')
-    })
-
-    it('defaults to 国立 for unknown first digit', () => {
-        expect(classifyUnivType('4140-91-0010')).toBe('国立')
-        expect(classifyUnivType('0140-91-0010')).toBe('国立')
-    })
-})
-
-describe('filter clause building', () => {
-    it('returns empty clause when no filters active', () => {
-        const { clause, hasFilter } = buildFilterClause('', '', '')
-        expect(clause).toBe('')
-        expect(hasFilter).toBe(false)
-    })
-
-    it('adds type filter', () => {
-        const { clause } = buildFilterClause('国立', '', '')
-        expect(clause).toContain('univ_type')
-        expect(clause).toContain('国立')
-    })
-
-    it('adds schedule filter', () => {
-        const { clause } = buildFilterClause('', '前', '')
-        expect(clause).toContain('schedule')
-        expect(clause).toContain('前')
-    })
-
-    it('combines multiple filters with AND', () => {
-        const { clause, hasFilter } = buildFilterClause('私立', '前', '文系')
-        expect(hasFilter).toBe(true)
-        expect(clause).toContain('AND')
-        expect(clause).toContain('私立')
-        expect(clause).toContain('前')
-    })
-})
-
-describe('edge cases', () => {
-    it('empty search query should not match anything as exact', () => {
-        const result = classifyMatch('', '', '', {
-            university: '東京大学',
-            code: '1140-91-0010',
+    it('exact — with 大学 suffix completion', () => {
+        expect(classifyMatch('東京', '東京', '東京', SAMPLE_ROW)).toEqual({
+            rank: 0,
+            type: 'exact',
         })
-        // Empty query: prefixPattern = '%', codeWithDash.includes('') = true,
-        // so prefix check passes. SQL has the same behavior with LIKE '%'.
-        // The route handler guards against this with `if (!q) return empty`.
-        expect(result).toBe('prefix')
     })
 
-    it('university with old-name notation is matched by LIKE', () => {
-        const row = {
+    it('exact — code without hyphens', () => {
+        expect(
+            classifyMatch('1140910010', '1140910010', '1140910010', SAMPLE_ROW)
+        ).toEqual({ rank: 1, type: 'code' })
+    })
+
+    it('exact — code with hyphens', () => {
+        const r = classifyMatch('1140-91-0010', '1140-91-0010', '1140910010', SAMPLE_ROW)
+        expect(r).toEqual({ rank: 1, type: 'code' })
+    })
+
+    it('prefix — code', () => {
+        expect(classifyMatch('1140', '1140', '1140', SAMPLE_ROW)).toEqual({
+            rank: 2,
+            type: 'prefix',
+        })
+    })
+
+    it('prefix — code without hyphens', () => {
+        expect(classifyMatch('114091', '114091', '114091', SAMPLE_ROW)).toEqual({
+            rank: 2,
+            type: 'prefix',
+        })
+    })
+
+    it('partial — university LIKE', () => {
+        expect(classifyMatch('京大', '京大', '京大', SAMPLE_ROW)).toEqual({
+            rank: 3,
+            type: 'partial',
+        })
+    })
+
+    it('partial — university (old-name suffix falls through)', () => {
+        const row: CodeRow = {
+            ...SAMPLE_ROW,
             university: 'YIC学院大学 (旧名: 広島女学院大学)',
-            code: '3190-91-0010',
         }
-        // Searching for the old name should hit partial match
-        expect(classifyMatch('広島女学院', '広島女学院', '広島女学院', row)).toBe(
-            'partial'
-        )
-        // Searching for the new name — the exact check fails because
-        // the stored name has " (旧名: ...)" suffix, not a pure university name.
-        // It correctly falls to partial (university LIKE '%YIC学院大学%' matches).
-        expect(classifyMatch('YIC学院大学', 'YIC学院', 'YIC学院大学', row)).toBe(
-            'partial'
-        )
+        // Searching "YIC学院大学" against stored "YIC学院大学 (旧名: ...)" 
+        // won't match exact (≠ because of suffix). Falls through to partial.
+        expect(classifyMatch('YIC学院大学', 'YIC学院', 'YIC学院大学', row)).toEqual({
+            rank: 3,
+            type: 'partial',
+        })
+    })
+
+    it('partial — searching old name hits LIKE', () => {
+        const row: CodeRow = {
+            ...SAMPLE_ROW,
+            university: 'YIC学院大学 (旧名: 広島女学院大学)',
+        }
+        expect(classifyMatch('広島女学院', '広島女学院', '広島女学院', row)).toEqual({
+            rank: 3,
+            type: 'partial',
+        })
+    })
+})
+
+describe('textMatches', () => {
+    it('matches university name', () => {
+        expect(textMatches('東京', '東京', SAMPLE_ROW)).toBe(true)
+    })
+
+    it('matches code', () => {
+        expect(textMatches('1140-91', '114091', SAMPLE_ROW)).toBe(true)
+    })
+
+    it('matches faculty', () => {
+        expect(textMatches('法学部', '法学部', SAMPLE_ROW)).toBe(true)
+    })
+
+    it('matches department', () => {
+        expect(textMatches('法律', '法律', SAMPLE_ROW)).toBe(true)
+    })
+
+    it('matches code without hyphens', () => {
+        expect(textMatches('1140910010', '1140910010', SAMPLE_ROW)).toBe(true)
+    })
+
+    it('does not match unrelated query', () => {
+        expect(textMatches('京都', '京都', SAMPLE_ROW)).toBe(false)
+    })
+})
+
+describe('univType', () => {
+    it('国立 — code starting with 1', () => {
+        expect(univType('1140-91-0010')).toBe('国立')
+    })
+
+    it('公立 — code starting with 2', () => {
+        expect(univType('2140-91-0010')).toBe('公立')
+    })
+
+    it('私立 — code starting with 3', () => {
+        expect(univType('3140-91-0010')).toBe('私立')
+    })
+
+    it('defaults to 国立 for 0/4-9', () => {
+        expect(univType('0140-91-0010')).toBe('国立')
+        expect(univType('4140-91-0010')).toBe('国立')
+    })
+})
+
+describe('FACULTY_PATTERNS', () => {
+    it('文系 matches 法学部', () => {
+        expect(FACULTY_PATTERNS['文系'].test('法学部')).toBe(true)
+    })
+
+    it('文系 matches 経済学部', () => {
+        expect(FACULTY_PATTERNS['文系'].test('経済学部')).toBe(true)
+    })
+
+    it('理系 matches 工学部', () => {
+        expect(FACULTY_PATTERNS['理系'].test('工学部')).toBe(true)
+    })
+
+    it('医療系 does not match 法学部', () => {
+        expect(FACULTY_PATTERNS['医療系'].test('法学部')).toBe(false)
+    })
+
+    it('医療系 matches 医学部', () => {
+        expect(FACULTY_PATTERNS['医療系'].test('医学部')).toBe(true)
+    })
+
+    it('芸術系 matches 音楽学部', () => {
+        expect(FACULTY_PATTERNS['芸術系'].test('音楽学部')).toBe(true)
+    })
+
+    it('体育系 matches スポーツ科学部', () => {
+        expect(FACULTY_PATTERNS['体育系'].test('スポーツ科学部')).toBe(true)
     })
 })
