@@ -31,6 +31,21 @@ export function SuggestionDropdown({
     setFocus(0);
   }, [suggestions, loading, query]);
 
+  // Global "/" key shortcut — focus search input
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key !== "/") return;
+      // Don't steal focus from other inputs
+      const tag = (e.target as HTMLElement).tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+      if ((e.target as HTMLElement).isContentEditable) return;
+      e.preventDefault();
+      inputRef.current?.focus();
+    }
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, []);
+
   function submit() {
     submitted.current = true;
     setOpen(false);
@@ -61,14 +76,6 @@ export function SuggestionDropdown({
 
   return (
     <div className="relative">
-      {/* Ambient glow behind search */}
-      <div
-        className="absolute inset-[-40px_-60px_-20px] pointer-events-none z-[-1]"
-        style={{
-          background: "radial-gradient(ellipse at 50% 40%, rgba(74,111,165,0.08) 0%, transparent 70%)",
-        }}
-      />
-
       {/* Search wrap — Apple-style hero search */}
       <div className="relative flex items-center bg-popover border border-border rounded-[14px] shadow-sm transition-all duration-200 focus-within:border-accent focus-within:shadow-[0_1px_3px_rgba(0,0,0,0.04),0_8px_24px_rgba(74,111,165,0.10)]">
         {/* Search icon — 48x48 grid center */}

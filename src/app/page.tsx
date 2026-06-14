@@ -78,21 +78,25 @@ function HomeContent() {
         </div>
       )}
 
-      {query && !loading && (
+      {query && (
         <div className="text-xs text-muted-foreground mb-3">
-          {total > 0
-            ? `${total}件 が見つかりました`
-            : "該当するコードが見つかりませんでした"}
+          {!loading && total === 0
+            ? "該当するコードが見つかりませんでした"
+            : total > 0
+              ? `${total}件 が見つかりました`
+              : null}
         </div>
       )}
 
-      <ResultList
-        results={results}
-        total={total}
-        page={page}
-        totalPages={totalPages}
-        onPageChange={(p) => setPage(p)}
-      />
+      <div className={loading && results.length > 0 ? "opacity-50 transition-opacity" : ""}>
+        <ResultList
+          results={results}
+          total={total}
+          page={page}
+          totalPages={totalPages}
+          onPageChange={(p) => setPage(p)}
+        />
+      </div>
 
       <footer className="mt-auto pt-8 pb-6 border-t border-border text-center">
         <p className="text-xs text-muted-foreground max-w-[600px] mx-auto leading-relaxed">
