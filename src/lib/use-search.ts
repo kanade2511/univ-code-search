@@ -1,187 +1,225 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { useSearchParams, useRouter, usePathname } from "next/navigation";
+import { useQueryState, parseAsString, parseAsInteger } from "nuqs";
 import type { SearchResult } from "@/lib/types";
 import type { FilterAction, FilterState } from "@/components/filter-tabs";
 import { sanitizeQuery } from "@/lib/query";
 
 export function useSearch() {
-  const searchParams = useSearchParams();
-  const router = useRouter();
-  const pathname = usePathname();
+    // URL state — nuqs handles sync, typing, defaults
+    const [query, setQuery] = useQueryState(
+        "q",
+        parseAsString.withDefault("")
+    );
+    const [page, setPage] = useQueryState(
+        "page",
+        parseAsInteger.withDefault(1)
+    );
+    const [type, setType] = useQueryState(
+        "type",
+        parseAsString.withDefault("")
+    );
+    const [schedule, setSchedule] = useQueryState(
+        "schedule",
+        parseAsString.withDefault("")
+    );
+    const [faculty, setFaculty] = useQueryState(
+        "faculty",
+        parseAsString.withDefault("")
+    );
 
-  const [query, setQuery] = useState(searchParams.get("q") || "");
-  const [results, setResults] = useState<SearchResult[]>([]);
-  const [total, setTotal] = useState(0);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [page, setPage] = useState(parseInt(searchParams.get("page") || "1"));
+    // Immediate input state (for responsive typing feel)
+    // nuqs state lags behind URL commit, so we track typing separately
+    const [inputValue, setInputValue] = useState(query);
+    const inputRef = useRef(query);
 
-  const filterState: FilterState = {
-    type: searchParams.get("type") || "",
-    schedule: searchParams.get("schedule") || "",
-    faculty: searchParams.get("faculty") || "",
-  };
+    const [results, setResults] = useState<SearchResult[]>([]);
+    const [total, setTotal] = useState(0);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState("");
 
-  const [suggestions, setSuggestions] = useState<string[]>([]);
-  const [suggestLoading, setSuggestLoading] = useState(false);
-  const suggestTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-  const searchTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-  const queryRef = useRef(query);
-  queryRef.current = query;
-  const searchSeq = useRef(0);
-  const suggestSeq = useRef(0);
+    // Suggestions
+    const [suggestions, setSuggestions] = useState<string[]>([]);
+    const [suggestLoading, setSuggestLoading] = useState(false);
+    const suggestTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+    const searchTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+    const suggestSeq = useRef(0);
 
-  const updateURL = useCallback(
-    (q: string, p: number, type: string, schedule: string, faculty: string) => {
-      const search = [
-        `q=${q}`,
-        p > 1 && `page=${p}`,
-        type && `type=${type}`,
-        schedule && `schedule=${schedule}`,
-        faculty && `faculty=${faculty}`,
-      ]
-        .filter(Boolean)
-        .join("&");
-      router.replace(`${pathname}?${search}`, { scroll: false });
-    },
-    [router, pathname]
-  );
+    const filterState: FilterState = { type, schedule, faculty };
 
-  const doSearch = useCallback(
-    async (q: string, p: number, type?: string, schedule?: string, faculty?: string) => {
-      const seq = ++searchSeq.current;
-      const ft = type ?? filterState.type;
-      const fs = schedule ?? filterState.schedule;
-      const ff = faculty ?? filterState.faculty;
-      if (!q.trim()) {
+    // Sync input when URL query changes (from QuickSearch, URL load, etc.)
+    useEffect(() => {
+        setInputValue(query);
+        inputRef.current = query;
+    }, [query]);
+
+    // --- Search effect: fires when URL params change ---
+    useEffect(() => {
+        if (!query.trim()) {
+            setResults([]);
+            setTotal(0);
+            setError("");
+            return;
+        }
+
+        let cancelled = false;
+        setLoading(true);
+        setError("");
+
+        let url = `/api/search?q=${encodeURIComponent(query)}&page=${page}`;
+        if (type) url += `&type=${encodeURIComponent(type)}`;
+        if (schedule) url += `&schedule=${encodeURIComponent(schedule)}`;
+        if (faculty) url += `&faculty=${encodeURIComponent(faculty)}`;
+
+        fetch(url)
+            .then((res) => {
+                if (cancelled) return;
+                if (!res.ok)
+                    return res.json().then((b) => {
+                        throw new Error(
+                            b.error || `サーバーエラー (${res.status})`
+                        );
+                    });
+                return res.json();
+            })
+            .then((data) => {
+                if (cancelled) return;
+                setResults(data.results);
+                setTotal(data.total);
+            })
+            .catch((e) => {
+                if (cancelled) return;
+                setError(
+                    e instanceof Error
+                        ? e.message
+                        : "検索に失敗しました"
+                );
+                setResults([]);
+            })
+            .finally(() => {
+                if (!cancelled) setLoading(false);
+            });
+
+        return () => {
+            cancelled = true;
+        };
+    }, [query, page, type, schedule, faculty]);
+
+    // --- Suggestions ---
+    const fetchSuggestions = useCallback(async (q: string) => {
+        const seq = ++suggestSeq.current;
+        if (!q.trim()) {
+            setSuggestions([]);
+            return;
+        }
+        setSuggestLoading(true);
+        try {
+            const res = await fetch(
+                `/api/universities?q=${encodeURIComponent(q)}`
+            );
+            if (seq !== suggestSeq.current) return;
+            if (!res.ok) throw new Error();
+            const data = await res.json();
+            if (seq !== suggestSeq.current) return;
+            setSuggestions(data.universities);
+        } catch {
+            if (seq === suggestSeq.current) setSuggestions([]);
+        } finally {
+            if (seq === suggestSeq.current) setSuggestLoading(false);
+        }
+    }, []);
+
+    const handleValueChange = (value: string) => {
+        const sanitized = sanitizeQuery(value);
+        if (!sanitized) {
+            handleClear();
+            return;
+        }
+        // Immediate visual update
+        setInputValue(value);
+        inputRef.current = value;
+        // Debounce suggestions at 200ms
+        clearTimeout(suggestTimer.current);
+        suggestTimer.current = setTimeout(
+            () => fetchSuggestions(value),
+            200
+        );
+        // Debounce search/URL update at 400ms
+        clearTimeout(searchTimer.current);
+        searchTimer.current = setTimeout(
+            () => setQuery(value),
+            400
+        );
+    };
+
+    const handleSubmit = () => {
+        clearTimeout(suggestTimer.current);
+        clearTimeout(searchTimer.current);
+        // Use ref to get the latest typed value
+        setQuery(inputRef.current);
+    };
+
+    const handleQuickSearch = (q: string) => {
+        clearTimeout(suggestTimer.current);
+        clearTimeout(searchTimer.current);
+        setInputValue(q);
+        inputRef.current = q;
+        setQuery(q);
+        setPage(1);
+        setSuggestions([]);
+    };
+
+    const handleClear = () => {
+        clearTimeout(suggestTimer.current);
+        clearTimeout(searchTimer.current);
+        setInputValue("");
+        inputRef.current = "";
+        setQuery(null);
+        setType(null);
+        setSchedule(null);
+        setFaculty(null);
+        setPage(null);
         setResults([]);
         setTotal(0);
-        return;
-      }
-      setLoading(true);
-      setError("");
-      try {
-        let url = `/api/search?q=${encodeURIComponent(q)}&page=${p}`;
-        if (ft) url += `&type=${encodeURIComponent(ft)}`;
-        if (fs) url += `&schedule=${encodeURIComponent(fs)}`;
-        if (ff) url += `&faculty=${encodeURIComponent(ff)}`;
-        const res = await fetch(url);
-        if (seq !== searchSeq.current) return; // stale response
-        if (!res.ok) {
-          const body = await res.json().catch(() => ({}));
-          throw new Error(body.error || `サーバーエラー (${res.status})`);
-        }
-        const data = await res.json();
-        if (seq !== searchSeq.current) return; // stale response
-        setResults(data.results);
-        setTotal(data.total);
-        updateURL(q, p, ft, fs, ff);
-      } catch (e) {
-        if (seq !== searchSeq.current) return; // stale error
-        setError(e instanceof Error ? e.message : "検索に失敗しました");
-        setResults([]);
-      } finally {
-        if (seq === searchSeq.current) setLoading(false);
-      }
-    },
-    [filterState.type, filterState.schedule, filterState.faculty, updateURL]
-  );
-
-  const initialized = useRef(false);
-  useEffect(() => {
-    if (query && !initialized.current) {
-      initialized.current = true;
-      doSearch(query, page);
-      fetchSuggestions(query);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const fetchSuggestions = useCallback(async (q: string) => {
-    const seq = ++suggestSeq.current;
-    if (!q.trim()) {
-      setSuggestions([]);
-      return;
-    }
-    setSuggestLoading(true);
-    try {
-      const res = await fetch(`/api/universities?q=${encodeURIComponent(q)}`);
-      if (seq !== suggestSeq.current) return; // stale response
-      if (!res.ok) throw new Error();
-      const data = await res.json();
-      if (seq !== suggestSeq.current) return; // stale response
-      setSuggestions(data.universities);
-    } catch {
-      if (seq === suggestSeq.current) setSuggestions([]);
-    } finally {
-      if (seq === suggestSeq.current) setSuggestLoading(false);
-    }
-  }, []);
-
-  const handleValueChange = (value: string) => {
-    const sanitized = sanitizeQuery(value);
-    if (!sanitized) {
-      handleClear();
-      return;
-    }
-    setQuery(value);
-    queryRef.current = value;
-    setPage(1);
-    clearTimeout(suggestTimer.current);
-    suggestTimer.current = setTimeout(() => fetchSuggestions(value), 200);
-    clearTimeout(searchTimer.current);
-    searchTimer.current = setTimeout(() => doSearch(value, 1), 400);
-  };
-
-  const handleSubmit = () => {
-    clearTimeout(suggestTimer.current);
-    clearTimeout(searchTimer.current);
-    doSearch(queryRef.current, 1);
-  };
-
-  const handleQuickSearch = (q: string) => {
-    setQuery(q);
-    setPage(1);
-    setSuggestions([]);
-    clearTimeout(suggestTimer.current);
-    clearTimeout(searchTimer.current);
-    doSearch(q, 1);
-  };
-
-  const handleClear = () => {
-    setQuery("");
-    setResults([]);
-    setTotal(0);
-    setPage(1);
-    setError("");
-    setSuggestions([]);
-    router.replace(pathname, { scroll: false });
-  };
-
-  const handleFilterChange = (action: FilterAction) => {
-    if (!query) return;
-    const newType = action.type === "type" ? action.value : filterState.type;
-    const newSchedule = action.type === "schedule" ? action.value : filterState.schedule;
-    const newFaculty = action.type === "faculty" ? action.value : filterState.faculty;
-    doSearch(query, 1, newType, newSchedule, newFaculty);
-  };
-
-  useEffect(() => {
-    return () => {
-      clearTimeout(suggestTimer.current);
-      clearTimeout(searchTimer.current);
+        setError("");
+        setSuggestions([]);
     };
-  }, []);
 
-  const totalPages = Math.ceil(total / 50);
+    const handleFilterChange = (action: FilterAction) => {
+        if (action.type === "type") setType(action.value || null);
+        if (action.type === "schedule")
+            setSchedule(action.value || null);
+        if (action.type === "faculty")
+            setFaculty(action.value || null);
+        setPage(1);
+    };
 
-  return {
-    query, results, total, loading, error, page, totalPages,
-    suggestions, suggestLoading, filterState,
-    handleValueChange, handleSubmit, handleQuickSearch, handleClear,
-    handleFilterChange, doSearch,
-    setQuery, setResults, setTotal, setPage,
-  };
+    useEffect(() => {
+        return () => {
+            clearTimeout(suggestTimer.current);
+            clearTimeout(searchTimer.current);
+        };
+    }, []);
+
+    const totalPages = Math.ceil(total / 50);
+
+    return {
+        query: inputValue, // show immediate input value, not debounced URL value
+        results,
+        total,
+        loading,
+        error,
+        page,
+        totalPages,
+        suggestions,
+        suggestLoading,
+        filterState,
+        handleValueChange,
+        handleSubmit,
+        handleQuickSearch,
+        handleClear,
+        handleFilterChange,
+        setPage,
+    };
 }

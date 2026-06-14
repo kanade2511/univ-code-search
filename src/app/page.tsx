@@ -12,7 +12,7 @@ function HomeContent() {
     query, results, total, loading, error, page, totalPages,
     suggestions, suggestLoading, filterState,
     handleValueChange, handleSubmit, handleQuickSearch, handleClear,
-    handleFilterChange, doSearch,
+    handleFilterChange,
     setPage,
   } = useSearch();
 
@@ -91,10 +91,7 @@ function HomeContent() {
         total={total}
         page={page}
         totalPages={totalPages}
-        onPageChange={(p) => {
-          setPage(p);
-          doSearch(query, p);
-        }}
+        onPageChange={(p) => setPage(p)}
       />
 
       <footer className="mt-auto pt-8 pb-6 border-t border-border text-center">
