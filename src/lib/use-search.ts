@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import type { SearchResult } from "@/lib/types";
 import type { FilterAction, FilterState } from "@/components/filter-tabs";
+import { sanitizeQuery } from "@/lib/query";
 
 export function useSearch() {
   const searchParams = useSearchParams();
@@ -120,6 +121,11 @@ export function useSearch() {
   }, []);
 
   const handleValueChange = (value: string) => {
+    const sanitized = sanitizeQuery(value);
+    if (!sanitized) {
+      handleClear();
+      return;
+    }
     setQuery(value);
     queryRef.current = value;
     setPage(1);

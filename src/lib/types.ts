@@ -14,8 +14,6 @@ export type SearchResult = {
 export type SearchResponse = {
   results: SearchResult[];
   total: number;
-  exactCount: number;
-  codeCount: number;
   page: number;
   limit: number;
 };

@@ -68,7 +68,7 @@ export async function GET(request: NextRequest) {
   const offset = (page - 1) * limit;
 
   if (!q) {
-    return NextResponse.json({ results: [], total: 0, exactCount: 0, codeCount: 0, page, limit });
+    return NextResponse.json({ results: [], total: 0, page, limit });
   }
 
   const cacheKey = `${q}|${type}|${schedule}|${facultyType}|${page}`;
@@ -140,8 +140,6 @@ export async function GET(request: NextRequest) {
     const json = {
       results,
       total,
-      exactCount: results.filter((r) => r.matchType === "exact").length,
-      codeCount: results.filter((r) => r.matchType === "code").length,
       page,
       limit,
     };
