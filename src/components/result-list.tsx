@@ -133,14 +133,13 @@ function DesktopTable({ items }: { items: SearchResult[] }) {
                             <td className="px-4 py-3 text-muted-foreground/70 whitespace-nowrap">{r.department}</td>
                             <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">{r.schedule || "-"}</td>
                             <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">{r.method || "-"}</td>
-                            <td className="px-4 py-3 font-mono whitespace-nowrap">
-                                <div className="text-accent font-medium mb-1">{r.code}</div>
-                                <div className="inline-flex items-center gap-1.5">
-                                    <CopyCodeButton code={r.code} />
-                                    <FavoriteButton code={r.code} item={r} />
-                                </div>
+                            <td className="px-4 py-3 whitespace-nowrap">
+                                <CopyCodeButton code={r.code} />
                             </td>
-                        </tr>
+                                <td className="px-2 py-3 text-center">
+                                    <FavoriteButton code={r.code} item={r} />
+                                </td>
+                            </tr>
                     ))}
                 </tbody>
             </table>
