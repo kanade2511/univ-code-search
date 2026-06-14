@@ -46,8 +46,8 @@ function FavoriteButton({ code, item }: { code: string; item: SearchResult }) {
             }}
             className={`w-4 h-4 cursor-pointer transition-all shrink-0 ${
                 fav
-                    ? "fill-pink-500 text-pink-500"
-                    : "text-muted-foreground/20 hover:text-pink-400"
+                    ? "fill-yellow-500 text-yellow-500"
+                    : "text-muted-foreground/25 hover:text-yellow-500"
             }`}
             aria-label={fav ? `${item.university} をブックマークから削除` : `${item.university} をブックマークに追加`}
         />
@@ -113,7 +113,7 @@ function DesktopTable({ items }: { items: SearchResult[] }) {
                         <th className="text-left px-4 py-3 font-medium text-muted-foreground text-xs">方式</th>
                         <th className="text-left px-4 py-3 font-medium text-muted-foreground text-xs font-mono">コード</th>
                         <th className="text-center px-2 py-3 font-medium text-muted-foreground text-xs w-10">
-                            <Bookmark className="w-3.5 h-3.5 mx-auto text-muted-foreground/40" />
+                            <span className="text-muted-foreground text-xs font-medium">ブックマーク</span>
                         </th>
                     </tr>
                 </thead>
