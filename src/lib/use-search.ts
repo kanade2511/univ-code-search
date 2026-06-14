@@ -60,6 +60,7 @@ export function useSearch() {
             setResults([]);
             setTotal(0);
             setError("");
+            setLoading(false);
             return;
         }
 
@@ -183,6 +184,7 @@ export function useSearch() {
         setResults([]);
         setTotal(0);
         setError("");
+        setLoading(false);
         setSuggestions([]);
     };
 
