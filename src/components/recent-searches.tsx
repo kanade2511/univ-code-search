@@ -55,7 +55,7 @@ export function RecentSearches({ onSelect }: Props) {
           <div
             key={item}
             onClick={() => onSelect(item)}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[10px] border border-border bg-popover hover:border-accent hover:bg-accent/5 transition-all duration-150 text-xs sm:text-[13px] text-foreground cursor-pointer group active:scale-[0.98] select-none"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[10px] border border-border bg-popover hover:border-accent hover:bg-accent/5 transition-colors duration-150 text-xs sm:text-[13px] text-foreground cursor-pointer group active:scale-[0.98] select-none"
           >
             <History className="w-3.5 h-3.5 text-muted-foreground/40 group-hover:text-accent transition-colors shrink-0" />
             <span className="truncate max-w-[180px] sm:max-w-[260px]">{item}</span>

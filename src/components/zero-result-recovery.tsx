@@ -1,6 +1,6 @@
 "use client";
 
-import { SearchX, RotateCcw, Lightbulb, Sparkles } from "lucide-react";
+import { SearchX, RotateCcw, Lightbulb } from "lucide-react";
 import { splitQueryTokens, normalizeSearchQuery } from "@/lib/university";
 import { getUniversityAlias } from "@/lib/aliases";
 
@@ -65,20 +65,22 @@ export function ZeroResultRecovery({ query, onClear, onSelectQuery }: Props) {
       {/* Suggested alternative query if available */}
       {shortenedSuggestion && shortenedSuggestion !== query && (
         <div className="mt-5 p-3.5 rounded-xl bg-accent/5 border border-accent/20 flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-2 text-xs sm:text-sm text-foreground">
-            <Sparkles className="w-4 h-4 text-accent shrink-0" />
-            <span>
-              もしかして：
-              <strong className="font-semibold text-accent ml-1">
-                「{shortenedSuggestion}」
-              </strong>
-              で探していませんか？
-            </span>
+          <div className="text-xs sm:text-sm text-foreground leading-relaxed">
+            もしかして：
+            <button
+              type="button"
+              onClick={() => onSelectQuery(shortenedSuggestion)}
+              className="inline-flex items-center font-bold text-accent hover:text-accent/80 underline underline-offset-4 decoration-accent/40 hover:decoration-accent cursor-pointer transition-colors px-1 py-0.5 rounded-sm hover:bg-accent/10 active:scale-95"
+              title={`「${shortenedSuggestion}」で検索`}
+            >
+              「{shortenedSuggestion}」
+            </button>
+            で探していませんか？
           </div>
           <button
             type="button"
             onClick={() => onSelectQuery(shortenedSuggestion)}
-            className="px-3 py-1.5 rounded-md bg-accent text-accent-foreground text-xs font-medium hover:brightness-95 transition-all cursor-pointer"
+            className="hidden sm:inline-flex items-center px-3 py-1.5 rounded-md bg-accent text-accent-foreground text-xs font-medium hover:brightness-95 transition-colors cursor-pointer shrink-0"
           >
             「{shortenedSuggestion}」で再検索
           </button>

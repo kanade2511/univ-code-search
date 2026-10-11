@@ -59,7 +59,7 @@ function FavoritesSection({ onSelect }: { onSelect: (q: string) => void }) {
                                 removeFavorite(f.code);
                                 refresh();
                             }}
-                            className="shrink-0 p-1.5 rounded-md text-muted-foreground/30 hover:text-destructive hover:bg-red-50 transition-colors opacity-0 group-hover:opacity-100 cursor-pointer"
+                            className="shrink-0 p-1.5 rounded-md text-muted-foreground/40 hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer"
                             aria-label={`${f.university} をブックマークから削除`}
                         >
                             <X className="w-3.5 h-3.5" />
@@ -92,25 +92,15 @@ function HomeContent() {
         </p>
       </header>
 
-      <div className="relative mb-6">
-        <div
-          className="absolute pointer-events-none z-0"
-          style={{
-            inset: "-40px -60px -20px",
-            background:
-              "radial-gradient(ellipse at 50% 40%, rgba(74,111,165,0.08) 0%, transparent 70%)",
-          }}
+      <div className="mb-6">
+        <SuggestionDropdown
+          query={query}
+          onQueryChange={handleValueChange}
+          onSubmit={handleSubmit}
+          onClear={handleClear}
+          suggestions={suggestions}
+          loading={suggestLoading}
         />
-        <div className="relative z-10">
-          <SuggestionDropdown
-            query={query}
-            onQueryChange={handleValueChange}
-            onSubmit={handleSubmit}
-            onClear={handleClear}
-            suggestions={suggestions}
-            loading={suggestLoading}
-          />
-        </div>
       </div>
 
       {!query && (
@@ -176,6 +166,14 @@ function HomeContent() {
           <br />
           結果は参考値です。出願の際は必ず一次資料を確認してください。
         </p>
+        <div className="mt-3">
+          <a
+            href="/preview"
+            className="text-[11px] text-muted-foreground/50 hover:text-accent transition-colors"
+          >
+            UIデザイン Before / After プレビュー →
+          </a>
+        </div>
       </footer>
     </div>
   );

@@ -28,7 +28,7 @@ describe("ZeroResultRecovery", () => {
     expect(cleared).toBe(true);
   });
 
-  it("suggests first token when multi-word query is entered", () => {
+  it("suggests first token when multi-word query is entered and allows clicking the inline keyword", () => {
     let selected = "";
 
     render(
@@ -41,10 +41,10 @@ describe("ZeroResultRecovery", () => {
       />
     );
 
-    const suggestBtn = screen.getByText("「早稲田」で再検索");
-    expect(suggestBtn).toBeDefined();
+    const inlineKeywordBtn = screen.getByText("「早稲田」");
+    expect(inlineKeywordBtn).toBeDefined();
 
-    fireEvent.click(suggestBtn);
+    fireEvent.click(inlineKeywordBtn);
     expect(selected).toBe("早稲田");
   });
 

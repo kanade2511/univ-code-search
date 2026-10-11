@@ -77,7 +77,7 @@ export function SuggestionDropdown({
   return (
     <div className="relative">
       {/* Search wrap — Apple-style hero search */}
-      <div className="relative flex items-center bg-popover border border-border rounded-[14px] shadow-sm transition-all duration-200 focus-within:border-accent focus-within:shadow-[0_1px_3px_rgba(0,0,0,0.04),0_8px_24px_rgba(74,111,165,0.10)]">
+      <div className="relative flex items-center bg-popover border border-border rounded-[14px] shadow-sm transition-[border-color,box-shadow] duration-200 focus-within:border-accent focus-within:shadow-[0_1px_3px_rgba(0,0,0,0.04),0_8px_24px_rgba(74,111,165,0.10)]">
         {/* Search icon — 48x48 grid center */}
         <span className="grid place-items-center w-12 h-12 flex-shrink-0 text-muted-foreground" aria-hidden="true">
           <Search className="h-5 w-5" />
@@ -114,7 +114,7 @@ export function SuggestionDropdown({
         <button
           type="button"
           onClick={submit}
-          className="hidden sm:inline-flex items-center gap-1.5 mr-1.5 my-1.5 px-[18px] py-[10px] border-0 rounded-[10px] bg-accent text-accent-foreground text-sm font-semibold cursor-pointer transition-all duration-200 hover:brightness-90 active:scale-[0.98]"
+          className="hidden sm:inline-flex items-center gap-1.5 mr-1.5 my-1.5 px-[18px] py-[10px] border-0 rounded-[10px] bg-accent text-accent-foreground text-sm font-semibold cursor-pointer transition-colors duration-150 hover:brightness-90 active:scale-[0.98]"
         >
           <ArrowRight className="h-4 w-4" />
           検索
