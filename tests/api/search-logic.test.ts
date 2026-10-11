@@ -54,6 +54,24 @@ describe('classifyMatch', () => {
         })
     })
 
+    it('exact — alias matches canonical university', () => {
+        expect(classifyMatch('東大', '東大', '東大', SAMPLE_ROW)).toEqual({
+            rank: 0,
+            type: 'exact',
+        })
+        expect(classifyMatch('とうだい', 'とうだい', 'とうだい', SAMPLE_ROW)).toEqual({
+            rank: 0,
+            type: 'exact',
+        })
+    })
+
+    it('exact — multi-token with university alias', () => {
+        expect(classifyMatch('東大 法学部', '東大 法', '東大法学部', SAMPLE_ROW)).toEqual({
+            rank: 0,
+            type: 'exact',
+        })
+    })
+
     it('partial — university LIKE', () => {
         expect(classifyMatch('京大', '京大', '京大', SAMPLE_ROW)).toEqual({
             rank: 3,
@@ -105,6 +123,31 @@ describe('textMatches', () => {
 
     it('matches code without hyphens', () => {
         expect(textMatches('1140910010', '1140910010', SAMPLE_ROW)).toBe(true)
+    })
+
+    it('matches multi-keyword AND queries', () => {
+        expect(textMatches('東京 法', '東京法', SAMPLE_ROW)).toBe(true)
+        expect(textMatches('東京　法律', '東京法律', SAMPLE_ROW)).toBe(true)
+        expect(textMatches('東大 前期', '東大前期', SAMPLE_ROW)).toBe(true)
+        expect(textMatches('東大 1140', '東大1140', SAMPLE_ROW)).toBe(true)
+    })
+
+    it('does not match multi-keyword query when one token mismatches', () => {
+        expect(textMatches('東京 経済', '東京経済', SAMPLE_ROW)).toBe(false)
+        expect(textMatches('京都 法', '京都法', SAMPLE_ROW)).toBe(false)
+    })
+
+    it('matches alias directly', () => {
+        expect(textMatches('東大', '東大', SAMPLE_ROW)).toBe(true)
+        expect(textMatches('とうだい', 'とうだい', SAMPLE_ROW)).toBe(true)
+    })
+
+    it('matches faculty with suffix against short faculty data', () => {
+        const rowWithShortFaculty: CodeRow = {
+            ...SAMPLE_ROW,
+            faculty: '法',
+        }
+        expect(textMatches('法学部', '法学部', rowWithShortFaculty)).toBe(true)
     })
 
     it('does not match unrelated query', () => {

@@ -2,9 +2,13 @@
 
 import type { SearchResult } from "@/lib/types";
 import { useState } from "react";
-import { Copy, Bookmark } from "lucide-react";
+import { Copy, Bookmark, ExternalLink } from "lucide-react";
 import { isFavorite, toggleFavorite } from "@/lib/favorites";
 import { useToast } from "@/components/toast";
+
+import { splitQueryTokens, normalizeSearchQuery } from "@/lib/university";
+import { getUniversityAlias } from "@/lib/aliases";
+import { getPassnaviUrl } from "@/lib/passnavi";
 
 type Props = {
     results: SearchResult[];
@@ -12,6 +16,7 @@ type Props = {
     page: number;
     totalPages: number;
     onPageChange: (page: number) => void;
+    query?: string;
 };
 
 const GROUP_LABELS: Record<string, string> = {
@@ -20,6 +25,52 @@ const GROUP_LABELS: Record<string, string> = {
     prefix: "コード前方一致",
     partial: "部分一致",
 };
+
+function Highlight({ text, query }: { text: string; query?: string }) {
+    if (!text || !query) return <>{text}</>;
+    const tokens = splitQueryTokens(query);
+    if (tokens.length === 0) return <>{text}</>;
+
+    const keywords: string[] = [];
+    for (const t of tokens) {
+        if (!t) continue;
+        keywords.push(t);
+        const norm = normalizeSearchQuery(t);
+        if (norm && norm !== t) keywords.push(norm);
+        const alias = getUniversityAlias(t);
+        if (alias) {
+            keywords.push(alias);
+            const aliasRoot = alias.replace(/(大学|大学校)$/, "");
+            if (aliasRoot && aliasRoot !== alias) keywords.push(aliasRoot);
+        }
+    }
+
+    const unique = Array.from(new Set(keywords.filter((k) => k.length > 0))).sort(
+        (a, b) => b.length - a.length
+    );
+    if (unique.length === 0) return <>{text}</>;
+
+    const escaped = unique.map((k) => k.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|");
+    const regex = new RegExp(`(${escaped})`, "g");
+    const parts = text.split(regex);
+
+    return (
+        <>
+            {parts.map((part, i) =>
+                unique.includes(part) ? (
+                    <mark
+                        key={i}
+                        className="bg-accent/15 text-accent font-semibold rounded-xs px-0.5"
+                    >
+                        {part}
+                    </mark>
+                ) : (
+                    part
+                )
+            )}
+        </>
+    );
+}
 
 function FavoriteButton({ code, item }: { code: string; item: SearchResult }) {
     const [fav, setFav] = useState(() => isFavorite(code));
@@ -102,7 +153,7 @@ function CopyCodeButton({ code }: { code: string }) {
     );
 }
 
-function DesktopTable({ items }: { items: SearchResult[] }) {
+function DesktopTable({ items, query }: { items: SearchResult[]; query?: string }) {
     return (
         <div className="hidden md:block overflow-hidden rounded-xl border border-border">
             <table className="w-full text-sm">
@@ -125,18 +176,39 @@ function DesktopTable({ items }: { items: SearchResult[] }) {
                             key={r.id}
                             className="border-b border-border/50 last:border-b-0 hover:bg-muted/40 transition-colors duration-150"
                         >
-                            <td className="px-4 py-3 text-foreground font-medium whitespace-nowrap">{r.university}</td>
-                            <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">{r.faculty}</td>
-                            <td className="px-4 py-3 text-muted-foreground/70 whitespace-nowrap">{r.department}</td>
+                            <td className="px-4 py-3 text-foreground font-medium whitespace-nowrap">
+                                <div className="inline-flex items-center gap-1.5">
+                                    <Highlight text={r.university} query={query} />
+                                    <a
+                                        href={getPassnaviUrl(r.university)}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-muted-foreground/35 hover:text-accent transition-colors inline-flex items-center p-0.5 rounded hover:bg-accent/10"
+                                        title="パスナビで科目・配点を見る（外部リンク）"
+                                        aria-label={`${r.university}の入試科目・配点をパスナビで見る`}
+                                        onClick={(e) => e.stopPropagation()}
+                                    >
+                                        <ExternalLink className="w-3.5 h-3.5" />
+                                    </a>
+                                </div>
+                            </td>
+                            <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
+                                <Highlight text={r.faculty} query={query} />
+                            </td>
+                            <td className="px-4 py-3 text-muted-foreground/70 whitespace-nowrap">
+                                <Highlight text={r.department} query={query} />
+                            </td>
                             <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">{r.schedule || "-"}</td>
-                            <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">{r.method || "-"}</td>
+                            <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
+                                <Highlight text={r.method || "-"} query={query} />
+                            </td>
                             <td className="px-4 py-3 whitespace-nowrap">
                                 <CopyCodeButton code={r.code} />
                             </td>
-                                <td className="px-3 py-3 text-center w-24">
-                                    <FavoriteButton code={r.code} item={r} />
-                                </td>
-                            </tr>
+                            <td className="px-3 py-3 text-center w-24">
+                                <FavoriteButton code={r.code} item={r} />
+                            </td>
+                        </tr>
                     ))}
                 </tbody>
             </table>
@@ -144,13 +216,15 @@ function DesktopTable({ items }: { items: SearchResult[] }) {
     );
 }
 
-function MobileCards({ items }: { items: SearchResult[] }) {
+function MobileCards({ items, query }: { items: SearchResult[]; query?: string }) {
     return (
         <div className="md:hidden space-y-3">
             {items.map((r) => (
                 <div key={r.id} className="rounded-xl border border-border bg-popover p-3.5 shadow-sm">
                     <div className="flex items-start justify-between gap-2 mb-1.5 min-w-0">
-                        <span className="text-sm font-medium text-foreground truncate">{r.university}</span>
+                        <span className="text-sm font-medium text-foreground truncate">
+                            <Highlight text={r.university} query={query} />
+                        </span>
                         <div className="shrink-0 text-right flex items-start gap-2">
                             <FavoriteButton code={r.code} item={r} />
                             <div>
@@ -159,12 +233,33 @@ function MobileCards({ items }: { items: SearchResult[] }) {
                         </div>
                     </div>
                     <div className="text-xs text-muted-foreground mb-1.5">
-                        {r.faculty}
-                        {r.department ? ` / ${r.department}` : ""}
+                        <Highlight text={r.faculty} query={query} />
+                        {r.department ? (
+                            <>
+                                {" / "}
+                                <Highlight text={r.department} query={query} />
+                            </>
+                        ) : ""}
                     </div>
-                    <div className="flex gap-3 text-xs text-muted-foreground/70">
-                        <span>日程: {r.schedule || "-"}</span>
-                        <span>方式: {r.method || "-"}</span>
+                    <div className="flex items-center justify-between gap-3 text-xs text-muted-foreground/70 pt-1">
+                        <div className="flex gap-3">
+                            <span>日程: {r.schedule || "-"}</span>
+                            <span>
+                                方式: <Highlight text={r.method || "-"} query={query} />
+                            </span>
+                        </div>
+                        <a
+                            href={getPassnaviUrl(r.university)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-[11px] font-medium text-accent hover:text-accent/80 transition-colors py-0.5 px-2 rounded-md bg-accent/10 active:scale-95 shrink-0"
+                            title="パスナビで科目・配点を見る"
+                            aria-label={`${r.university}の入試科目・配点をパスナビで見る`}
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <span>科目・配点</span>
+                            <ExternalLink className="w-2.5 h-2.5" />
+                        </a>
                     </div>
                 </div>
             ))}
@@ -203,6 +298,7 @@ export function ResultList({
     page,
     totalPages,
     onPageChange,
+    query,
 }: Props) {
     if (results.length === 0) return null;
 
@@ -227,8 +323,8 @@ export function ResultList({
                             </span>
                             <div className="flex-1 border-t border-border/60" />
                         </div>
-                        <DesktopTable items={items} />
-                        <MobileCards items={items} />
+                        <DesktopTable items={items} query={query} />
+                        <MobileCards items={items} query={query} />
                     </div>
                 );
             })}

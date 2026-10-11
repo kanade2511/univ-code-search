@@ -85,4 +85,21 @@ describe('normalizeSearchQuery', () => {
     it('converts full-width space and strips suffix', () => {
         expect(normalizeSearchQuery('　大学')).toBe(' ')
     })
+
+    it('removes trailing 学部, 学科, 専攻, 研究科', () => {
+        expect(normalizeSearchQuery('法学部')).toBe('法')
+        expect(normalizeSearchQuery('経済学部')).toBe('経済')
+        expect(normalizeSearchQuery('工学部')).toBe('工')
+        expect(normalizeSearchQuery('法律学科')).toBe('法律')
+        expect(normalizeSearchQuery('情報科学専攻')).toBe('情報科学')
+        expect(normalizeSearchQuery('文学研究科')).toBe('文学')
+    })
+
+    it('splits query tokens preserving multi-keyword inputs', () => {
+        const { splitQueryTokens } = require('../../src/lib/university')
+        expect(splitQueryTokens('早稲田 法学部')).toEqual(['早稲田', '法学部'])
+        expect(splitQueryTokens('東京　経済　前期')).toEqual(['東京', '経済', '前期'])
+        expect(splitQueryTokens('  慶応    1140  ')).toEqual(['慶応', '1140'])
+        expect(splitQueryTokens('')).toEqual([])
+    })
 })

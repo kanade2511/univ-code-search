@@ -32,6 +32,8 @@ export type SearchOutput = {
     limit: number
 }
 
+import { getUniversityAlias } from './aliases'
+
 type Classified = CodeRow & { matchRank: number; matchType: MatchClass['type']; univType: ReturnType<typeof univType> }
 
 const CODE_HYPHEN = /-/g
@@ -42,7 +44,7 @@ export function search(params: SearchParams): SearchOutput {
     const codeQuery = raw.replace(CODE_HYPHEN, '')
     const rows = loadRows()
 
-    if (!q) {
+    if (!raw) {
         return { results: [], total: 0, page: params.page, limit: params.limit }
     }
 
@@ -58,7 +60,7 @@ export function search(params: SearchParams): SearchOutput {
         filtered = filtered.filter((r) => re.test(r.faculty))
     }
 
-    const matched = filtered.filter((r) => textMatches(q, codeQuery, r))
+    const matched = filtered.filter((r) => textMatches(raw, codeQuery, r))
 
     const classified: Classified[] = matched.map((r) => {
         const m = classifyMatch(raw, q, codeQuery, r)
@@ -85,9 +87,31 @@ export function search(params: SearchParams): SearchOutput {
 }
 
 export function suggest(q: string): string[] {
-    if (!q.trim()) return []
-    const normalized = normalizeSearchQuery(q.trim())
-    if (!normalized) return []
+    const raw = q.trim()
+    if (!raw) return []
+    const normalized = normalizeSearchQuery(raw)
     const universities = getUniversities()
-    return universities.filter((u) => u.includes(normalized)).slice(0, 20)
+    const results: string[] = []
+    const seen = new Set<string>()
+
+    // Check alias exact match first
+    const alias = getUniversityAlias(raw) || (normalized ? getUniversityAlias(normalized) : undefined)
+    if (alias) {
+        const canonical = universities.find((u) => u === alias || u.startsWith(alias.replace('大学', '')))
+        if (canonical) {
+            results.push(canonical)
+            seen.add(canonical)
+        }
+    }
+
+    // Match by university name
+    for (const u of universities) {
+        if (!seen.has(u) && (u.includes(raw) || (normalized && u.includes(normalized)))) {
+            seen.add(u)
+            results.push(u)
+            if (results.length >= 20) break
+        }
+    }
+
+    return results
 }

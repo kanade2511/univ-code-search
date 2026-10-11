@@ -3,7 +3,6 @@
 import { Suspense } from "react";
 import { SuggestionDropdown } from "@/components/suggestion-dropdown";
 import { QuickSearch } from "@/components/quick-search";
-import { FilterTabs } from "@/components/filter-tabs";
 import { ResultList } from "@/components/result-list";
 import { useSearch } from "@/lib/use-search";
 import { useState, useEffect } from "react";
@@ -73,9 +72,8 @@ function FavoritesSection({ onSelect }: { onSelect: (q: string) => void }) {
 function HomeContent() {
   const {
     query, results, total, loading, error, page, totalPages,
-    suggestions, suggestLoading, filterState,
+    suggestions, suggestLoading,
     handleValueChange, handleSubmit, handleQuickSearch, handleClear,
-    handleFilterChange,
     setPage,
   } = useSearch();
 
@@ -128,7 +126,6 @@ function HomeContent() {
           >
             ← 戻る
           </button>
-          <FilterTabs state={filterState} onChange={handleFilterChange} />
         </div>
       )}
 
@@ -162,6 +159,7 @@ function HomeContent() {
           page={page}
           totalPages={totalPages}
           onPageChange={(p) => setPage(p)}
+          query={query}
         />
       </div>
 

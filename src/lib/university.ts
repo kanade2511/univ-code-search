@@ -22,11 +22,28 @@ export function fullwidthToHalfwidth(s: string): string {
 }
 
 /**
- * Normalize search query: strip trailing "大学" or "大" so that
- * "東京大学" matches the stored name "東京大学".
+ * Normalize search query: strip trailing "大学", "大学校", "大",
+ * as well as trailing "学部", "学科", "専攻", "研究科" so that
+ * "東京大学" matches "東京大学" and "法学部" matches "法".
  * Also converts full-width characters to half-width.
  */
 export function normalizeSearchQuery(q: string): string {
     const halfwidth = fullwidthToHalfwidth(q);
-    return halfwidth.replace(/(大学|大)$/, '');
+    let normalized = halfwidth.replace(/(大学校|大学|大)$/, '');
+    if (normalized.length > 2) {
+        normalized = normalized.replace(/(学部|学科|専攻)$/, '');
+    }
+    if (normalized.length > 3) {
+        normalized = normalized.replace(/研究科$/, '');
+    }
+    return normalized;
+}
+
+/**
+ * Split query into distinct non-empty search tokens, converting full-width spaces.
+ */
+export function splitQueryTokens(q: string): string[] {
+    const half = fullwidthToHalfwidth(q).trim();
+    if (!half) return [];
+    return half.split(/\s+/).filter(Boolean);
 }
