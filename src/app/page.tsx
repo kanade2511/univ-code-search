@@ -3,6 +3,8 @@
 import { Suspense } from "react";
 import { SuggestionDropdown } from "@/components/suggestion-dropdown";
 import { QuickSearch } from "@/components/quick-search";
+import { RecentSearches } from "@/components/recent-searches";
+import { ZeroResultRecovery } from "@/components/zero-result-recovery";
 import { ResultList } from "@/components/result-list";
 import { useSearch } from "@/lib/use-search";
 import { useState, useEffect } from "react";
@@ -113,6 +115,7 @@ function HomeContent() {
 
       {!query && (
         <>
+          <RecentSearches onSelect={handleQuickSearch} />
           <QuickSearch onSelect={handleQuickSearch} />
           <FavoritesSection onSelect={handleQuickSearch} />
         </>
@@ -142,13 +145,17 @@ function HomeContent() {
         </div>
       )}
 
-      {query && (
+      {query && !loading && !error && total === 0 && (
+        <ZeroResultRecovery
+          query={query}
+          onClear={handleClear}
+          onSelectQuery={handleQuickSearch}
+        />
+      )}
+
+      {query && !loading && !error && total > 0 && (
         <div className="text-xs text-muted-foreground mb-3">
-          {!loading && total === 0
-            ? "該当するコードが見つかりませんでした"
-            : total > 0
-              ? `${total}件 が見つかりました`
-              : null}
+          {total}件 が見つかりました
         </div>
       )}
 

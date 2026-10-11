@@ -6,6 +6,7 @@ import type { SearchResult } from "@/lib/types";
 import type { FilterAction, FilterState } from "@/components/filter-tabs";
 import { sanitizeQuery } from "@/lib/query";
 import { isFavorite } from "@/lib/favorites";
+import { addSearchHistory } from "@/lib/search-history";
 
 export function useSearch() {
     // URL state — nuqs handles sync, typing, defaults
@@ -90,6 +91,9 @@ export function useSearch() {
                 if (cancelled) return;
                 setResults(data.results);
                 setTotal(data.total);
+                if (data.total > 0 && query.trim().length >= 2 && inputRef.current.trim() === query.trim()) {
+                    addSearchHistory(query.trim());
+                }
             })
             .catch((e) => {
                 if (cancelled) return;
@@ -159,13 +163,20 @@ export function useSearch() {
     const handleSubmit = () => {
         clearTimeout(suggestTimer.current);
         clearTimeout(searchTimer.current);
-        // Use ref to get the latest typed value
+        const q = inputRef.current.trim();
+        if (q) {
+            addSearchHistory(q);
+        }
         setQuery(inputRef.current);
     };
 
     const handleQuickSearch = (q: string) => {
         clearTimeout(suggestTimer.current);
         clearTimeout(searchTimer.current);
+        const trimmed = q.trim();
+        if (trimmed) {
+            addSearchHistory(trimmed);
+        }
         setInputValue(q);
         inputRef.current = q;
         setQuery(q);
@@ -213,11 +224,14 @@ export function useSearch() {
 
     const totalPages = Math.ceil(displayTotal / 50);
 
+    const isDebouncing = inputValue.trim() !== "" && inputValue.trim() !== query.trim();
+    const isActuallyLoading = loading || isDebouncing;
+
     return {
         query: inputValue,
         results: displayResults,
         total: displayTotal,
-        loading,
+        loading: isActuallyLoading,
         error,
         page,
         totalPages,
