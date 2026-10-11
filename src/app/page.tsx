@@ -5,6 +5,7 @@ import { SuggestionDropdown } from "@/components/suggestion-dropdown";
 import { QuickSearch } from "@/components/quick-search";
 import { RecentSearches } from "@/components/recent-searches";
 import { ZeroResultRecovery } from "@/components/zero-result-recovery";
+import { ShareButtons } from "@/components/share-buttons";
 import { ResultList } from "@/components/result-list";
 import { useSearch } from "@/lib/use-search";
 import { useState, useEffect } from "react";
@@ -159,6 +160,8 @@ function HomeContent() {
           query={query}
         />
       </div>
+
+      <ShareButtons />
 
       <footer className="mt-auto pt-8 pb-6 border-t border-border text-center">
         <p className="text-xs text-muted-foreground max-w-[600px] mx-auto leading-relaxed">
