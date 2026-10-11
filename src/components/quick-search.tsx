@@ -26,6 +26,23 @@ const PRIVATE: QuickSearchItem[] = [
   { label: "國學院大", query: "國學院大学" }, { label: "武蔵大", query: "武蔵大学" },
 ];
 
+const GROUPS: QuickSearchItem[] = [
+  { label: "早慶", query: "早慶" },
+  { label: "MARCH", query: "MARCH" },
+  { label: "関関同立", query: "関関同立" },
+  { label: "旧帝大", query: "旧帝大" },
+  { label: "日東駒専", query: "日東駒専" },
+  { label: "産近甲龍", query: "産近甲龍" },
+  { label: "早慶上理", query: "早慶上理" },
+  { label: "GMARCH", query: "GMARCH" },
+  { label: "東京一工", query: "東京一工" },
+  { label: "金岡千広", query: "金岡千広" },
+  { label: "5S", query: "5S" },
+  { label: "成成明学獨國武", query: "成成明学獨國武" },
+  { label: "大東亜帝国", query: "大東亜帝国" },
+  { label: "四工大", query: "四工大" },
+];
+
 type Props = {
   onSelect: (query: string) => void;
 };
@@ -36,6 +53,23 @@ export function QuickSearch({ onSelect }: Props) {
 
   return (
     <div className="mb-10 space-y-6">
+      <section aria-labelledby="groups-heading">
+        <h2
+          id="groups-heading"
+          className="flex items-center gap-1.5 text-xs font-semibold tracking-[0.04em] uppercase text-muted-foreground mb-2.5"
+        >
+          <span className="w-1.5 h-1.5 rounded-full bg-accent" aria-hidden="true" />
+          大学群
+        </h2>
+        <div className="flex flex-wrap gap-1.5 max-[480px]:gap-[7px]">
+          {GROUPS.map((u) => (
+            <button key={u.label} onClick={() => onSelect(u.query)} className={tagBtn}>
+              {u.label}
+            </button>
+          ))}
+        </div>
+      </section>
+
       <section aria-labelledby="national-heading">
         <h2
           id="national-heading"

@@ -33,6 +33,7 @@ export type SearchOutput = {
 }
 
 import { getUniversityAlias } from './aliases'
+import { getUniversitiesInGroup } from './groups'
 
 type Classified = CodeRow & { matchRank: number; matchType: MatchClass['type']; univType: ReturnType<typeof univType> }
 
@@ -94,11 +95,23 @@ export function suggest(q: string): string[] {
     const results: string[] = []
     const seen = new Set<string>()
 
-    // Check alias exact match first
+    // Check group match first (e.g. MARCH -> 明治大, 青山学院大, etc.)
+    const groupUnivs = getUniversitiesInGroup(raw) || (normalized ? getUniversitiesInGroup(normalized) : undefined)
+    if (groupUnivs) {
+        for (const u of groupUnivs) {
+            const canonical = universities.find((univ) => univ === u || univ.startsWith(u.replace('大学', '')))
+            if (canonical && !seen.has(canonical)) {
+                results.push(canonical)
+                seen.add(canonical)
+            }
+        }
+    }
+
+    // Check alias exact match
     const alias = getUniversityAlias(raw) || (normalized ? getUniversityAlias(normalized) : undefined)
     if (alias) {
         const canonical = universities.find((u) => u === alias || u.startsWith(alias.replace('大学', '')))
-        if (canonical) {
+        if (canonical && !seen.has(canonical)) {
             results.push(canonical)
             seen.add(canonical)
         }

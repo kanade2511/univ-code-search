@@ -9,6 +9,7 @@ import { useToast } from "@/components/toast";
 import { splitQueryTokens, normalizeSearchQuery } from "@/lib/university";
 import { getUniversityAlias } from "@/lib/aliases";
 import { getPassnaviUrl } from "@/lib/passnavi";
+import { getUniversitiesInGroup, getGroupsForUniversity } from "@/lib/groups";
 
 type Props = {
     results: SearchResult[];
@@ -37,6 +38,16 @@ function Highlight({ text, query }: { text: string; query?: string }) {
         keywords.push(t);
         const norm = normalizeSearchQuery(t);
         if (norm && norm !== t) keywords.push(norm);
+
+        const groupUnivs = getUniversitiesInGroup(t) || (norm ? getUniversitiesInGroup(norm) : undefined);
+        if (groupUnivs) {
+            for (const u of groupUnivs) {
+                keywords.push(u);
+                const uRoot = u.replace(/(大学|大学校)$/, "");
+                if (uRoot) keywords.push(uRoot);
+            }
+        }
+
         const alias = getUniversityAlias(t);
         if (alias) {
             keywords.push(alias);

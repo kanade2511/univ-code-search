@@ -1,6 +1,7 @@
 import type { CodeRow } from './data'
 import { getUniversityAlias } from './aliases'
-import { normalizeSearchQuery, splitQueryTokens } from './university'
+import { getUniversitiesInGroup } from './groups'
+import { fullwidthToHalfwidth, normalizeSearchQuery, splitQueryTokens } from './university'
 
 const CODE_HYPHEN = /-/g
 
@@ -22,7 +23,16 @@ export function singleTokenMatches(token: string, r: CodeRow): boolean {
     if (!raw) return true
     const alias = getUniversityAlias(raw)
     const norm = normalizeSearchQuery(raw)
+    const univNorm = fullwidthToHalfwidth(raw).replace(/(大学校|大学|大)$/, '')
     const codeQuery = raw.replace(CODE_HYPHEN, '')
+
+    // 0. University group match (MARCH, 早慶, 旧帝大, etc.)
+    const groupUnivs = getUniversitiesInGroup(raw) || (norm ? getUniversitiesInGroup(norm) : undefined)
+    if (groupUnivs) {
+        if (groupUnivs.some((u) => r.university === u || r.university.startsWith(u + ' '))) {
+            return true
+        }
+    }
 
     // 1. University alias match
     if (alias) {
@@ -36,8 +46,9 @@ export function singleTokenMatches(token: string, r: CodeRow): boolean {
         return false
     }
 
-    // 2. University match (exact or normalized)
-    if (r.university.includes(raw) || (norm && r.university.includes(norm))) {
+    // 2. University match (exact or normalized university name)
+    // Only strip university suffixes (大学校/大学/大). Do NOT match university if query stripped faculty suffix (学部/学科/専攻).
+    if (r.university.includes(raw) || (univNorm && r.university.includes(univNorm))) {
         return true
     }
 
@@ -87,9 +98,13 @@ export function classifyMatch(
 ): MatchClass {
     const tokens = splitQueryTokens(raw)
 
-    // Multi-token query: check if one of the tokens matches university exactly / via alias
+    // Multi-token query: check if one of the tokens matches university exactly / via alias / via group
     if (tokens.length > 1) {
         for (const t of tokens) {
+            const groupUnivs = getUniversitiesInGroup(t)
+            if (groupUnivs && groupUnivs.some((u) => r.university === u || r.university.startsWith(u + ' '))) {
+                return { rank: 0, type: 'exact' }
+            }
             const alias = getUniversityAlias(t)
             if (alias && (r.university === alias || r.university.startsWith(alias + ' '))) {
                 return { rank: 0, type: 'exact' }
@@ -107,7 +122,13 @@ export function classifyMatch(
         return { rank: 3, type: 'partial' }
     }
 
-    // Single token: check alias first
+    // Single token: check group first
+    const groupUnivs = getUniversitiesInGroup(raw) || (q ? getUniversitiesInGroup(q) : undefined)
+    if (groupUnivs && groupUnivs.some((u) => r.university === u || r.university.startsWith(u + ' '))) {
+        return { rank: 0, type: 'exact' }
+    }
+
+    // Single token: check alias
     const alias = getUniversityAlias(raw)
     if (alias && (r.university === alias || r.university.startsWith(alias + ' '))) {
         return { rank: 0, type: 'exact' }
