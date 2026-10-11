@@ -166,14 +166,6 @@ function HomeContent() {
           <br />
           結果は参考値です。出願の際は必ず一次資料を確認してください。
         </p>
-        <div className="mt-3">
-          <a
-            href="/preview"
-            className="text-[11px] text-muted-foreground/50 hover:text-accent transition-colors"
-          >
-            UIデザイン Before / After プレビュー →
-          </a>
-        </div>
       </footer>
     </div>
   );
